@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libdate.a CMakeFiles/date.dir/date.cpp.o CMakeFiles/date.dir/dayAdjustment.cpp.o CMakeFiles/date.dir/dayCount.cpp.o CMakeFiles/date.dir/schedule.cpp.o CMakeFiles/date.dir/stub.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libdate.a
