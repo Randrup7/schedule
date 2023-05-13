@@ -1,6 +1,0 @@
-/Users/Frederik/Documents/C++/Projects/schedule/build/CMakeFiles/Main.dir
-/Users/Frederik/Documents/C++/Projects/schedule/build/CMakeFiles/edit_cache.dir
-/Users/Frederik/Documents/C++/Projects/schedule/build/CMakeFiles/rebuild_cache.dir
-/Users/Frederik/Documents/C++/Projects/schedule/build/src/CMakeFiles/date.dir
-/Users/Frederik/Documents/C++/Projects/schedule/build/src/CMakeFiles/edit_cache.dir
-/Users/Frederik/Documents/C++/Projects/schedule/build/src/CMakeFiles/rebuild_cache.dir

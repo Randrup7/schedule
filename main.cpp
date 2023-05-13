@@ -1,6 +1,5 @@
 #include "schedule.h"
 
-
 int main()
 {   
     schedule sched1{finDate(2022, 7, 20), finDate(2027, 5, 20), 4, 
