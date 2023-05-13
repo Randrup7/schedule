@@ -16,8 +16,10 @@ The schedule class is dependent on the classes finDate, dayAdjustment and stub c
 Build by making a build directory (i.e. build/), run cmake in that dir, and then use make to build the desired target.
 
 Example:
+```console
 > mkdir build
 > cd build
 > cmake ..
 > make
 > ./main
+```
