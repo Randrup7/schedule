@@ -1,7 +1,5 @@
 #include "schedule.h"
 
-// consider frequency to be std::chrono::duration
-// arguments to schedule constructor to be const &
 
 int main()
 {   
