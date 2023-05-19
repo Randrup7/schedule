@@ -5,6 +5,7 @@ add_library(
     dayCount.cpp
     schedule.cpp
     stub.cpp
+    holidayCalendar.cpp
 )
 
 # Specify library's header file location

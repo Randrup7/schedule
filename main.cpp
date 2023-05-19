@@ -1,4 +1,5 @@
 #include "schedule.h"
+#include "holidayCalendar.h"
 
 int main()
 {
@@ -9,6 +10,8 @@ int main()
 
     finDate dato(2023,5,19);
     std::cout << dato.day_of_year() << '\n';
+
+    std::cout << holidayFunctions::easterSunday(2016) << '\n';
 
     return 0;
 }
