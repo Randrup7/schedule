@@ -36,6 +36,7 @@ public:
     unsigned int day() const;
     int serialDate() const;
     const ymd year_month_day() const;
+    unsigned int day_of_year() const;
 
     // operators
     // not implemented yet: bool operator==(const finDate& rhs) const;
