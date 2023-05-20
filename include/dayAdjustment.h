@@ -9,7 +9,8 @@
 class I_dayAdjustment
 {
 public:
-    virtual void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) = 0;
+    virtual void adjustDate(finDate& date, 
+        std::unique_ptr<I_holidayCalendar> calendar = std::unique_ptr<I_holidayCalendar>(new Calendar::noCalendar())) = 0;
     virtual ~I_dayAdjustment() = default;
 };
 
@@ -20,7 +21,7 @@ namespace dayAdjustment
 class MF : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final;
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = std::unique_ptr<I_holidayCalendar>(new Calendar::noCalendar())) override final;
     virtual ~MF() = default;
 };
 
@@ -28,7 +29,7 @@ public:
 class F : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final;
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = std::unique_ptr<I_holidayCalendar>(new Calendar::noCalendar())) override final;
     virtual ~F() = default;
 };
 
@@ -36,7 +37,7 @@ public:
 class P : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final;
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = std::unique_ptr<I_holidayCalendar>(new Calendar::noCalendar())) override final;
     virtual ~P() = default;
 };
 
@@ -44,7 +45,7 @@ public:
 class Unadjusted : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final {};
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = std::unique_ptr<I_holidayCalendar>(new Calendar::noCalendar())) override final {};
     virtual ~Unadjusted() = default;
 };
 
