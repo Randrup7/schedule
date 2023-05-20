@@ -9,8 +9,8 @@ bool Calendar::DKCO::isHoliday(const finDate& date) const
                                         easterDate.addDays(-3),         // Skærtorsdag
                                         easterDate.addDays(-2),         // Langfredag
                                         easterDate.addDays(1),          // 2. påskedag
-                                        easterDate.addDays(39),         // 2. pinsedag 
-                                        easterDate.addDays(40),         // 2. pinsedag 
+                                        easterDate.addDays(39),         // Kristi himmelfart 
+                                        easterDate.addDays(40),         // Kristi himmelfart + 1
                                         easterDate.addDays(50),         // 2. pinsedag
                                         finDate(date.year(), 6, 5),     // Grundlovsdag 
                                         finDate(date.year(), 12, 24),   // Juleaften
@@ -22,6 +22,9 @@ bool Calendar::DKCO::isHoliday(const finDate& date) const
 
     return std::find(holidays.begin(), holidays.end(), date) != holidays.end();
 }
+
+
+
 
 
 finDate holidayFunctions::easterSunday(int year)

@@ -3,12 +3,13 @@
 
 #include <chrono>
 #include "date.h"
+#include "holidayCalendar.h"
 
 // The base interface class for dayadjustments
 class I_dayAdjustment
 {
 public:
-    virtual void adjustDate(finDate& date) = 0;
+    virtual void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) = 0;
     virtual ~I_dayAdjustment() = default;
 };
 
@@ -19,7 +20,7 @@ namespace dayAdjustment
 class MF : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date) override final;
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final;
     virtual ~MF() = default;
 };
 
@@ -27,7 +28,7 @@ public:
 class F : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date) override final;
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final;
     virtual ~F() = default;
 };
 
@@ -35,7 +36,7 @@ public:
 class P : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date) override final;
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final;
     virtual ~P() = default;
 };
 
@@ -43,7 +44,7 @@ public:
 class Unadjusted : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date) override final {};
+    void adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar = nullptr) override final {};
     virtual ~Unadjusted() = default;
 };
 

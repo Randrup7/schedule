@@ -14,13 +14,17 @@ namespace Calendar
 {
 class DKCO : public I_holidayCalendar
 {
-private:
-    /* data */
 public:
     bool isHoliday(const finDate& date) const override final;
     virtual ~DKCO() = default;
 };
 
+class noCalendar : public I_holidayCalendar
+{
+public:
+    bool isHoliday(const finDate& date) const override final { return false; };
+    virtual ~noCalendar() = default;
+};
 
 
 } // namespace Calendar

@@ -1,6 +1,9 @@
 #include "schedule.h"
 #include "holidayCalendar.h"
 
+// Check to see if in case of a holiday roll, rolls into weekend.
+// maybe have isWeekend method.
+
 int main()
 {
 /*    schedule sched1{finDate(2022, 7, 20), finDate(2027, 5, 20), 4, 
