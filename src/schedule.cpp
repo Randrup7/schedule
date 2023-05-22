@@ -2,9 +2,11 @@
 #include <algorithm>
 
 schedule::schedule(finDate start, finDate maturity, unsigned int freq, 
-                    std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention) 
+                    std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
+                    std::shared_ptr<I_holidayCalendar> holidayCalendar) 
                     : m_start{ start }, m_maturity{ maturity}, m_freq{ freq }, 
-                    m_dayRule{ std::move(dayrule) }, m_stubConvention{ std::move(stubConvention) }
+                    m_dayRule{ std::move(dayrule) }, m_stubConvention{ std::move(stubConvention) },
+                    m_holidayCalendar{ holidayCalendar }
 {
     if (start >= maturity)
     {
@@ -25,7 +27,8 @@ void schedule::calculateSchedule()
 
     for (finDate& date : m_paymentDates)
     {
-        m_dayRule->adjustDate(date);
+        m_dayRule->adjustDate(date, m_holidayCalendar);
+        std::cout << date;
     }
 }
 

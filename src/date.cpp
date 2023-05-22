@@ -1,6 +1,8 @@
 #include "date.h"
 #include <stdexcept>
 #include <iomanip>
+#include <numeric>
+#include <iterator>
 
 ///////////// Constructors /////////////
 finDate::finDate() : m_date{std::chrono::year{1970}, std::chrono::month{1}, std::chrono::day{1}} {}
@@ -42,6 +44,24 @@ unsigned int finDate::days_in_month() const
 bool finDate::is_leap_year() const
 {
     return m_date.year().is_leap();
+}
+
+unsigned int finDate::day_of_year() const
+{
+    std::array<unsigned int, 12> normal_end_dates{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    unsigned int day_of_year = std::accumulate(normal_end_dates.begin(), std::next(normal_end_dates.begin(), this->month() - 1), 0);
+    
+    if (this->is_leap_year()) { day_of_year = day_of_year + 1; }
+    day_of_year = day_of_year + this->day();
+
+    return day_of_year;
+}
+
+bool finDate::is_weekend() const
+{
+    std::chrono::weekday wd{ std::chrono::sys_days(m_date) };
+    unsigned int day_of_week = wd.iso_encoding();
+    return day_of_week > 5;
 }
 
 ///////////// Arithmetic operations /////////////
@@ -86,6 +106,7 @@ const ymd finDate::year_month_day() const { return m_date; }
 
 ///////////// Operator overloading /////////////
 int finDate::operator-(const finDate& rhs) { return m_serialDate - rhs.m_serialDate; }
+int finDate::operator-(const finDate& rhs) const { return m_serialDate - rhs.m_serialDate; }
 
 bool finDate::operator==(const finDate& rhs) const { return m_serialDate == rhs.m_serialDate; }
 bool finDate::operator>=(const finDate& rhs) const { return m_serialDate >= rhs.m_serialDate; }

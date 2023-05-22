@@ -24,6 +24,8 @@ public:
     // Check state
     unsigned int days_in_month() const;
     bool is_leap_year() const;
+    unsigned int day_of_year() const;
+    bool is_weekend() const;
 
     // Arithmetic operations
     finDate& addYears(int years);
@@ -40,6 +42,7 @@ public:
     // operators
     // not implemented yet: bool operator==(const finDate& rhs) const;
     int operator-(const finDate& rhs);
+    int operator-(const finDate& rhs) const ;
     
     bool operator==(const finDate& rhs) const;
     bool operator>=(const finDate& rhs) const;
