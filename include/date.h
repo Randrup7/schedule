@@ -42,6 +42,7 @@ public:
     // operators
     // not implemented yet: bool operator==(const finDate& rhs) const;
     int operator-(const finDate& rhs);
+    int operator-(const finDate& rhs) const ;
     
     bool operator==(const finDate& rhs) const;
     bool operator>=(const finDate& rhs) const;

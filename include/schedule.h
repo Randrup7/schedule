@@ -14,7 +14,8 @@ private:
     unsigned int m_freq;
     std::unique_ptr<I_dayAdjustment> m_dayRule;
     std::unique_ptr<I_stub> m_stubConvention;
-    std::unique_ptr<I_holidayCalendar> m_holidayCalendar;
+    std::shared_ptr<I_holidayCalendar> m_holidayCalendar;
+    
     std::vector<finDate> m_paymentDates;
 
     void calculateSchedule();
@@ -22,7 +23,7 @@ private:
 public:
     schedule(finDate start, finDate maturity, unsigned int freq, 
             std::unique_ptr<I_dayAdjustment> dayRule, std::unique_ptr<I_stub> stubConvention, 
-            std::unique_ptr<I_holidayCalendar> m_holidayCalendar = std::unique_ptr<I_holidayCalendar>(new Calendar::noCalendar())); 
+            std::shared_ptr<I_holidayCalendar> m_holidayCalendar = std::shared_ptr<I_holidayCalendar>(new Calendar::noCalendar())); 
 
     void setFrequency(unsigned int freq);
     void setStart(const finDate& start);

@@ -1,26 +1,26 @@
 #include "holidayCalendar.h"
 #include <vector>
-#include <algorithm>
 
 bool Calendar::DKCO::isHoliday(const finDate& date) const
 {
-    finDate easterDate = holidayFunctions::easterSunday(date.year());
-    std::vector<finDate> holidays = { finDate(date.year(), 1, 1),       // 1. Januar
-                                        easterDate.addDays(-3),         // Skærtorsdag
-                                        easterDate.addDays(-2),         // Langfredag
-                                        easterDate.addDays(1),          // 2. påskedag
-                                        easterDate.addDays(39),         // Kristi himmelfart 
-                                        easterDate.addDays(40),         // Kristi himmelfart + 1
-                                        easterDate.addDays(50),         // 2. pinsedag
-                                        finDate(date.year(), 6, 5),     // Grundlovsdag 
-                                        finDate(date.year(), 12, 24),   // Juleaften
-                                        finDate(date.year(), 12, 25),   // Juledag
-                                        finDate(date.year(), 12, 26),   // 2. Juledag
-                                        finDate(date.year(), 12, 31)    // Nytårsaften
-                                        };
-    if (date.year() <= 2023) { holidays.push_back(easterDate.addDays(26)); } // Store bededag
-
-    return std::find(holidays.begin(), holidays.end(), date) != holidays.end();
+    finDate easterDate = holidayFunctions::easterSunday(date.year()); 
+    
+    if ((date == finDate(date.year(), 1, 1))                        // 1. Januar
+        || (date - easterDate == -3)                                // Skærtorsdag
+        || (date - easterDate == -2)                                // Langfredag
+        || (date - easterDate == 1)                                 // 2. påskedag
+        || (date - easterDate == 39)                                // Kristi himmelfart 
+        || (date - easterDate == 40)                                // Kristi himmelfart + 1
+        || (date - easterDate == 50)                                // 2. pinsedag
+        || (date == finDate(date.year(), 6, 5))                     // Grundlovsdag 
+        || (date == finDate(date.year(), 12, 24))                   // Juleaften
+        || (date == finDate(date.year(), 12, 25))                   // Juledag
+        || (date == finDate(date.year(), 12, 26))                   // 2. Juledag
+        || (date == finDate(date.year(), 12, 31))                   // Nytårsaften
+        || ((date.year() <= 2023) && (date - easterDate == 26)))    // Store bededag
+        { return true; }
+    
+    return false;
 }
 
 

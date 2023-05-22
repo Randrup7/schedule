@@ -106,6 +106,7 @@ const ymd finDate::year_month_day() const { return m_date; }
 
 ///////////// Operator overloading /////////////
 int finDate::operator-(const finDate& rhs) { return m_serialDate - rhs.m_serialDate; }
+int finDate::operator-(const finDate& rhs) const { return m_serialDate - rhs.m_serialDate; }
 
 bool finDate::operator==(const finDate& rhs) const { return m_serialDate == rhs.m_serialDate; }
 bool finDate::operator>=(const finDate& rhs) const { return m_serialDate >= rhs.m_serialDate; }

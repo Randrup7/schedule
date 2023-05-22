@@ -1,7 +1,7 @@
 #include "dayAdjustment.h"
 
 // adjustDate function for the modified following dayrule class
-void dayAdjustment::MF::adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::MF::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
     std::chrono::month orig_month{ date.year_month_day().month() };
@@ -10,7 +10,7 @@ void dayAdjustment::MF::adjustDate(finDate& date, std::unique_ptr<I_holidayCalen
 
     if (day_of_week > 5) { date.addDays(8 - day_of_week); } // If weekend; go forward
 
-    while ((calendar && calendar->isHoliday(date)) || date.is_weekend()) // while the rolled-to date is not a business day
+    while (calendar->isHoliday(date) || date.is_weekend()) // while the rolled-to date is not a business day
     {
         date.addDays(1);
     }
@@ -18,7 +18,7 @@ void dayAdjustment::MF::adjustDate(finDate& date, std::unique_ptr<I_holidayCalen
     if (orig_month < date.year_month_day().month()
         || (orig_month == std::chrono::December && date.year_month_day().month() == std::chrono::January)) 
     {
-        while ((calendar && calendar->isHoliday(date)) || date.is_weekend()) // If we rolled to a new month, go back until day is valid.
+        while (calendar->isHoliday(date) || date.is_weekend()) // If we rolled to a new month, go back until day is valid.
         {
             date.addDays(-1);
         }
@@ -26,7 +26,7 @@ void dayAdjustment::MF::adjustDate(finDate& date, std::unique_ptr<I_holidayCalen
 }
 
 // adjustDate function for the following dayrule class
-void dayAdjustment::F::adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::F::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
 
@@ -34,14 +34,14 @@ void dayAdjustment::F::adjustDate(finDate& date, std::unique_ptr<I_holidayCalend
 
     if (day_of_week > 5) { date.addDays(8 - day_of_week); } // If weekend; go forward
     
-    while ((calendar && calendar->isHoliday(date)) || date.is_weekend()) // while the rolled-to date is not a business day
+    while (calendar->isHoliday(date) || date.is_weekend()) // while the rolled-to date is not a business day
     {
         date.addDays(1);
     }
 }
 
 // adjustDate function for the previous dayrule class
-void dayAdjustment::P::adjustDate(finDate& date, std::unique_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::P::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
 
@@ -49,7 +49,7 @@ void dayAdjustment::P::adjustDate(finDate& date, std::unique_ptr<I_holidayCalend
 
     if (day_of_week > 5) { date.addDays(day_of_week - 5); } // If weekend; go back
     
-    while ((calendar && calendar->isHoliday(date)) || date.is_weekend()) // while the rolled-to date is not a business day
+    while (calendar->isHoliday(date) || date.is_weekend()) // while the rolled-to date is not a business day
     {
         date.addDays(-1);
     }
