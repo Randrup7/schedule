@@ -117,7 +117,7 @@ bool finDate::operator<(const finDate& rhs) const { return m_serialDate < rhs.m_
 std::ostream& operator<<(std::ostream& out, const finDate& rhs)
 {
     out << rhs.year() << '-' << std::setw(2) << std::setfill('0') << rhs.month() << '-' 
-        << std::setw(2) << std::setfill('0') << rhs.day() << '\n';
+        << std::setw(2) << std::setfill('0') << rhs.day();
 
     return out;
 }

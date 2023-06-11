@@ -40,7 +40,6 @@ public:
     const ymd year_month_day() const;
 
     // operators
-    // not implemented yet: bool operator==(const finDate& rhs) const;
     int operator-(const finDate& rhs);
     int operator-(const finDate& rhs) const ;
     
