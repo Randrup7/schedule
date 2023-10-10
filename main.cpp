@@ -1,5 +1,8 @@
 #include "schedule.h"
 #include "holidayCalendar.h"
+//#include "ACT360.h"
+#include "dayCount.h"
+#include <iostream>
 
 int main()
 {
@@ -38,11 +41,25 @@ int main()
 
     #endif
 
-    /*
+    #if 0 // tester schedule
     schedule sched1{finDate(2023, 1, 6), finDate(2027, 1, 6), 4, 
                     std::unique_ptr<I_dayAdjustment>(new dayAdjustment::MF()),
                     std::unique_ptr<I_stub>(new stub::ShortFinal()),
                     std::shared_ptr<I_holidayCalendar>(new Calendar::jointCalendar(DKcal, T2)) };
-*/
+
+    #endif
+
+    #if 1 // Tester daycount
+
+    dayCount::ACT360 actual360{};
+
+    finDate dag1{2023, 1, 6};
+    finDate dag2{2024, 1, 6};
+
+    std::cout << '\n';
+    std::cout << "Difference between " << dag1 << " and " << dag2 << " using ACT/360 is: " << actual360(dag1, dag2) << '\n';
+    
+    #endif
+
     return 0;
 }

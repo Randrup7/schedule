@@ -2,7 +2,6 @@
 #define SCHEDULE_H
 
 #include <vector>
-#include "dayCount.h"
 #include "dayAdjustment.h"
 #include "stub.h"
 

@@ -2,7 +2,7 @@
 #define STUB_H
 
 #include <vector>
-#include "date.h"
+#include "../date.h"
 
 // The base interface class for stubs
 class I_stub

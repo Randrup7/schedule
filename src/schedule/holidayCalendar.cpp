@@ -6,7 +6,7 @@ bool Calendar::DKCO::isHoliday(const finDate& date) const
     int y = date.year();
     finDate easterDate = holidayFunctions::easterSunday(y); 
     
-    if ((date == finDate(date.year(), 1, 1))            // 1. Januar
+    if ((date == finDate(y, 1, 1))                      // 1. Januar
         || (date - easterDate == -3)                    // Skærtorsdag
         || (date - easterDate == -2)                    // Langfredag
         || (date - easterDate == 1)                     // 2. påskedag
