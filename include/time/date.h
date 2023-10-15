@@ -5,6 +5,7 @@
 #include <iostream>
 #include <array>
 #include <memory>
+#include "interval.h"
 
 using ymd = std::chrono::year_month_day;
 
@@ -41,7 +42,10 @@ public:
 
     // operators
     int operator-(const finDate& rhs);
-    int operator-(const finDate& rhs) const ;
+    int operator-(const finDate& rhs) const;
+
+    finDate& operator-(const interval& freq);
+    finDate& operator+(const interval& freq);
     
     bool operator==(const finDate& rhs) const;
     bool operator>=(const finDate& rhs) const;

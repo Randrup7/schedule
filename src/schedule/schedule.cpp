@@ -1,7 +1,7 @@
 #include "schedule.h"
 #include <algorithm>
 
-schedule::schedule(finDate start, finDate maturity, unsigned int freq, 
+schedule::schedule(finDate start, finDate maturity, interval freq, 
                     std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
                     std::shared_ptr<I_holidayCalendar> holidayCalendar) 
                     : m_start{ start }, m_maturity{ maturity}, m_freq{ freq }, 
@@ -12,12 +12,6 @@ schedule::schedule(finDate start, finDate maturity, unsigned int freq,
     {
         throw std::invalid_argument( "schedule Constructor: start date larger than maturity date." );
     }
-    
-    if (freq != 1 && freq != 2 && freq != 4 && freq != 6 && freq != 12)
-    {
-        throw std::invalid_argument( "schedule Constructor: Invalid frequency. Must be 1, 2, 4, 6 or 12." );
-    }
-
     calculateSchedule();
 }
 
@@ -28,17 +22,12 @@ void schedule::calculateSchedule()
     for (finDate& date : m_paymentDates)
     {
         m_dayRule->adjustDate(date, m_holidayCalendar);
-        std::cout << date;
     }
 }
 
 ///////////// Setter functions /////////////
-void schedule::setFrequency(unsigned int freq)
+void schedule::setFrequency(interval freq)
 {
-    if (freq != 1 && freq != 2 && freq != 4 && freq != 6 && freq != 12)
-    {
-        throw std::invalid_argument( "Invalid frequency. Must be 1, 2, 4, 6 or 12." );
-    }
     m_freq = freq;
     calculateSchedule();
 }
@@ -74,4 +63,13 @@ void schedule::setStubConvention(std::unique_ptr<I_stub> stubConvention)
 {
     m_stubConvention = std::move(stubConvention);
     calculateSchedule();
+}
+
+
+void schedule::printSchedule() const
+{
+    for (const finDate& date : m_paymentDates)
+    {
+        std::cout << date << '\n';
+    }
 }

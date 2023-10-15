@@ -1,19 +1,18 @@
 #include "schedule.h"
 #include "holidayCalendar.h"
-//#include "ACT360.h"
 #include "dayCount.h"
 #include <iostream>
 
 int main()
 {
-    #if 0 // Set to 1 to test joint calendars
-
     std::shared_ptr<I_holidayCalendar> DKcal(new Calendar::DKCO());
     std::shared_ptr<I_holidayCalendar> T2(new Calendar::TARGET());
 
     // Create two joint calendars, one with inner joined holidays, one with outer joined.
     std::shared_ptr<I_holidayCalendar> inJoint(new Calendar::jointCalendar(DKcal, T2, true));
     std::shared_ptr<I_holidayCalendar> outJoint(new Calendar::jointCalendar(DKcal, T2));
+    
+    #if 0 // Set to 1 to test joint calendars
 
     // Dates to test:
     finDate labourDay{ 2023, 5, 1 };    // this is target holiday, but not DK
@@ -41,15 +40,17 @@ int main()
 
     #endif
 
-    #if 0 // tester schedule
-    schedule sched1{finDate(2023, 1, 6), finDate(2027, 1, 6), 4, 
+    #if 1 // tester schedule
+    schedule sched1{finDate(2023, 1, 6), finDate(2027, 1, 6), interval(3, timeUnit::Months), 
                     std::unique_ptr<I_dayAdjustment>(new dayAdjustment::MF()),
                     std::unique_ptr<I_stub>(new stub::ShortFinal()),
                     std::shared_ptr<I_holidayCalendar>(new Calendar::jointCalendar(DKcal, T2)) };
+    
+    sched1.printSchedule();
 
     #endif
 
-    #if 1 // Tester daycount
+    #if 0 // Tester daycount
 
     dayCount::ACT360 actual360{};
 
@@ -59,6 +60,17 @@ int main()
     std::cout << '\n';
     std::cout << "Difference between " << dag1 << " and " << dag2 << " using ACT/360 is: " << actual360(dag1, dag2) << '\n';
     
+    #endif
+
+    #if 0 // Tester interval
+
+    interval Freq(3, timeUnit::Weeks);
+    finDate today(2023, 10, 15);
+
+    std::cout << today << '\n';
+    today + Freq;
+    std::cout << today << '\n';
+
     #endif
 
     return 0;

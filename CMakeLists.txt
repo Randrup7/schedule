@@ -28,6 +28,6 @@ add_subdirectory(src)
 add_executable(${PROJECT_NAME} main.cpp)
 
 # Linking library target (date) to executable target ${PROJECT_NAME}
-target_link_libraries(${PROJECT_NAME} PRIVATE date)
+target_link_libraries(${PROJECT_NAME} PRIVATE time)
 target_link_libraries(${PROJECT_NAME} PRIVATE schedule)
 target_link_libraries(${PROJECT_NAME} PRIVATE dayCount)

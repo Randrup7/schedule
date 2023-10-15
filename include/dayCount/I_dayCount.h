@@ -1,7 +1,7 @@
 #ifndef I_DAYCOUNT_H
 #define I_DAYCOUNT_H
 
-#include "../date.h"
+#include "../time/date.h"
 
 // Base interface class for dayCount
 class I_dayCount

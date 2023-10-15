@@ -1,14 +1,13 @@
 #include "stub.h"
 
-void stub::ShortInitial::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const int freq)
+void stub::ShortInitial::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const interval& freq)
 {
     finDate dateCounter = maturity;
-    int step = 12 / freq;
 
     while (dateCounter > start)
     {
         paymentDates.push_back(dateCounter);
-        dateCounter.addMonths(-(step));
+        dateCounter - freq;
     }
 
     paymentDates.push_back(start);
@@ -16,15 +15,14 @@ void stub::ShortInitial::fillSchedule(std::vector<finDate>& paymentDates, const 
     std::reverse(paymentDates.begin(), paymentDates.end());
 }
 
-void stub::LongInitial::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const int freq)
+void stub::LongInitial::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const interval& freq)
 {
     finDate dateCounter = maturity;
-    int step = 12 / freq;
 
     while (dateCounter > start)
     {
         paymentDates.push_back(dateCounter);
-        dateCounter.addMonths(-(step));
+        dateCounter - freq;
     }
     paymentDates.pop_back();
     paymentDates.push_back(start);
@@ -32,29 +30,27 @@ void stub::LongInitial::fillSchedule(std::vector<finDate>& paymentDates, const f
     std::reverse(paymentDates.begin(), paymentDates.end());
 }
 
-void stub::ShortFinal::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const int freq)
+void stub::ShortFinal::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const interval& freq)
 {
     finDate dateCounter = start;
-    int step = 12 / freq;
 
     while (dateCounter < maturity)
     {
         paymentDates.push_back(dateCounter);
-        dateCounter.addMonths(step);
+        dateCounter + freq;
     }
 
     paymentDates.push_back(maturity);
 }
 
-void stub::LongFinal::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const int freq)
+void stub::LongFinal::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const interval& freq)
 {
     finDate dateCounter = start;
-    int step = 12 / freq;
 
     while (dateCounter < maturity)
     {
         paymentDates.push_back(dateCounter);
-        dateCounter.addMonths(step);
+        dateCounter + freq;
     }
 
     paymentDates.pop_back();

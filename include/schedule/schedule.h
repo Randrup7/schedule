@@ -10,7 +10,7 @@ class schedule
 private:
     finDate m_start; 
     finDate m_maturity;
-    unsigned int m_freq;
+    interval m_freq;
     std::unique_ptr<I_dayAdjustment> m_dayRule;
     std::unique_ptr<I_stub> m_stubConvention;
     std::shared_ptr<I_holidayCalendar> m_holidayCalendar;
@@ -20,15 +20,20 @@ private:
     void calculateSchedule();
 
 public:
-    schedule(finDate start, finDate maturity, unsigned int freq, 
+    schedule(finDate start, finDate maturity, interval freq, 
             std::unique_ptr<I_dayAdjustment> dayRule, std::unique_ptr<I_stub> stubConvention, 
             std::shared_ptr<I_holidayCalendar> m_holidayCalendar = std::shared_ptr<I_holidayCalendar>(new Calendar::noCalendar())); 
 
-    void setFrequency(unsigned int freq);
+    void setFrequency(interval freq);
     void setStart(const finDate& start);
     void setMaturity(const finDate& maturity);
     void setDayrule(std::unique_ptr<I_dayAdjustment> dayRule);
     void setStubConvention(std::unique_ptr<I_stub> stubConvention);
+
+    void printSchedule() const;
+
+    // Next date const / non-const and return type?
+    // Previous date
 
 };
 

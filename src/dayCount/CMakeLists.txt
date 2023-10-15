@@ -13,4 +13,4 @@ target_include_directories(
 )
 
 # Link this target to the date library, to access the date class
-target_link_libraries(dayCount PRIVATE date)
+target_link_libraries(dayCount PRIVATE time)

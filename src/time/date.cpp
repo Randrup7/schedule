@@ -114,6 +114,49 @@ bool finDate::operator<=(const finDate& rhs) const { return m_serialDate <= rhs.
 bool finDate::operator>(const finDate& rhs) const { return m_serialDate > rhs.m_serialDate; }
 bool finDate::operator<(const finDate& rhs) const { return m_serialDate < rhs.m_serialDate; }
 
+
+finDate& finDate::operator-(const interval& freq)
+{
+    switch (freq.m_timeUnit)
+    {
+    case timeUnit::Days:
+        return addDays(-freq.m_lenght);
+    
+    case timeUnit::Weeks:
+        return addDays(-(freq.m_lenght * 7));
+    
+    case timeUnit::Months:
+        return addMonths(-freq.m_lenght);
+    
+    case timeUnit::Years:
+        return addYears(-freq.m_lenght);
+
+    default:
+        return *this;
+    }    
+}
+
+finDate& finDate::operator+(const interval& freq)
+{
+    switch (freq.m_timeUnit)
+    {
+    case timeUnit::Days:
+        return addDays(freq.m_lenght);
+    
+    case timeUnit::Weeks:
+        return addDays(freq.m_lenght * 7);
+    
+    case timeUnit::Months:
+        return addMonths(freq.m_lenght);
+    
+    case timeUnit::Years:
+        return addYears(freq.m_lenght);
+
+    default:
+        return *this;
+    }    
+}
+
 std::ostream& operator<<(std::ostream& out, const finDate& rhs)
 {
     out << rhs.year() << '-' << std::setw(2) << std::setfill('0') << rhs.month() << '-' 
