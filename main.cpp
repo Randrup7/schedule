@@ -41,7 +41,7 @@ int main()
     #endif
 
     #if 1 // tester schedule
-    schedule sched1{finDate(2023, 1, 6), finDate(2027, 1, 6), interval(3, timeUnit::Months), 
+    schedule sched1{finDate(2023, 1, 6), finDate(2027, 1, 6), 3_M, 
                     std::unique_ptr<I_dayAdjustment>(new dayAdjustment::MF()),
                     std::unique_ptr<I_stub>(new stub::ShortFinal()),
                     std::shared_ptr<I_holidayCalendar>(new Calendar::jointCalendar(DKcal, T2)) };

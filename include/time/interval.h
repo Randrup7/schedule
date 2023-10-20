@@ -25,4 +25,10 @@ public:
 };
 
 
+// User defined Literals for intervals
+interval operator ""_D(unsigned long long int D);
+interval operator ""_W(unsigned long long int W);
+interval operator ""_M(unsigned long long int M);
+interval operator ""_Y(unsigned long long int Y);
+
 #endif
