@@ -51,7 +51,7 @@ unsigned int finDate::day_of_year() const
     std::array<unsigned int, 12> normal_end_dates{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     unsigned int day_of_year = std::accumulate(normal_end_dates.begin(), std::next(normal_end_dates.begin(), this->month() - 1), 0);
     
-    if (this->is_leap_year()) { day_of_year = day_of_year + 1; }
+    if (this->is_leap_year() && day_of_year >= (31 + 28)) { day_of_year = day_of_year + 1; }
     day_of_year = day_of_year + this->day();
 
     return day_of_year;
