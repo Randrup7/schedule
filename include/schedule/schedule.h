@@ -20,7 +20,12 @@ private:
     void calculateSchedule();
 
 public:
+    // Constructors
     schedule(finDate start, finDate maturity, interval freq, 
+            std::unique_ptr<I_dayAdjustment> dayRule, std::unique_ptr<I_stub> stubConvention, 
+            std::shared_ptr<I_holidayCalendar> m_holidayCalendar = std::shared_ptr<I_holidayCalendar>(new Calendar::noCalendar())); 
+
+    schedule(finDate start, interval maturity, interval freq, 
             std::unique_ptr<I_dayAdjustment> dayRule, std::unique_ptr<I_stub> stubConvention, 
             std::shared_ptr<I_holidayCalendar> m_holidayCalendar = std::shared_ptr<I_holidayCalendar>(new Calendar::noCalendar())); 
 

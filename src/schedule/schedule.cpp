@@ -15,6 +15,23 @@ schedule::schedule(finDate start, finDate maturity, interval freq,
     calculateSchedule();
 }
 
+schedule::schedule(finDate start, interval maturity, interval freq, 
+                    std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
+                    std::shared_ptr<I_holidayCalendar> holidayCalendar) 
+                    : m_start{ start }, m_freq{ freq }, 
+                    m_dayRule{ std::move(dayrule) }, m_stubConvention{ std::move(stubConvention) },
+                    m_holidayCalendar{ holidayCalendar }
+{
+    if (maturity.isZero())
+    {
+        throw std::invalid_argument( "schedule Constructor: maturity cannot be a zero interval." );
+    }
+
+    m_maturity = start + maturity;
+
+    calculateSchedule();
+}
+
 void schedule::calculateSchedule()
 {
     m_stubConvention->fillSchedule(m_paymentDates, m_start, m_maturity, m_freq);

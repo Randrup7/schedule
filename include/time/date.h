@@ -44,8 +44,8 @@ public:
     int operator-(const finDate& rhs);
     int operator-(const finDate& rhs) const;
 
-    finDate& operator-(const interval& freq);
-    finDate& operator+(const interval& freq);
+    finDate& operator-=(const interval& freq);
+    finDate& operator+=(const interval& freq);
     
     bool operator==(const finDate& rhs) const;
     bool operator>=(const finDate& rhs) const;
@@ -55,5 +55,8 @@ public:
 
     friend std::ostream& operator<<(std::ostream& out, const finDate& rhs);
 };
+
+finDate operator+(const finDate& date, const interval& interval);
+finDate operator-(const finDate& date, const interval& interval);
 
 #endif

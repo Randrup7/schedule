@@ -115,7 +115,7 @@ bool finDate::operator>(const finDate& rhs) const { return m_serialDate > rhs.m_
 bool finDate::operator<(const finDate& rhs) const { return m_serialDate < rhs.m_serialDate; }
 
 
-finDate& finDate::operator-(const interval& freq)
+finDate& finDate::operator-=(const interval& freq)
 {
     switch (freq.m_timeUnit)
     {
@@ -136,7 +136,7 @@ finDate& finDate::operator-(const interval& freq)
     }    
 }
 
-finDate& finDate::operator+(const interval& freq)
+finDate& finDate::operator+=(const interval& freq)
 {
     switch (freq.m_timeUnit)
     {
@@ -154,6 +154,52 @@ finDate& finDate::operator+(const interval& freq)
 
     default:
         return *this;
+    }    
+}
+
+finDate operator+(const finDate& date, const interval& interval)
+{
+    finDate newDate = date;
+
+    switch (interval.m_timeUnit)
+    {
+    case timeUnit::Days:
+        return newDate.addDays(interval.m_lenght);
+    
+    case timeUnit::Weeks:
+        return newDate.addDays(interval.m_lenght * 7);
+    
+    case timeUnit::Months:
+        return newDate.addMonths(interval.m_lenght);
+    
+    case timeUnit::Years:
+        return newDate.addYears(interval.m_lenght);
+
+    default:
+        return newDate;
+    }    
+}
+
+finDate operator-(const finDate& date, const interval& interval)
+{
+    finDate newDate = date;
+
+    switch (interval.m_timeUnit)
+    {
+    case timeUnit::Days:
+        return newDate.addDays(-interval.m_lenght);
+    
+    case timeUnit::Weeks:
+        return newDate.addDays(-(interval.m_lenght * 7));
+    
+    case timeUnit::Months:
+        return newDate.addMonths(-interval.m_lenght);
+    
+    case timeUnit::Years:
+        return newDate.addYears(-interval.m_lenght);
+
+    default:
+        return newDate;
     }    
 }
 
