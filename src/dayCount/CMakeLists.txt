@@ -2,6 +2,9 @@ add_library(
     dayCount STATIC
     ACT360.cpp
     ACT365.cpp
+    ACT365_25.cpp
+    ACTACT_ISDA.cpp
+    Thrity360E.cpp
     #dayCount.cpp
     #I_dayCount.cpp
 )
