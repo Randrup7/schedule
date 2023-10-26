@@ -5,8 +5,7 @@ add_library(
     ACT365_25.cpp
     ACTACT_ISDA.cpp
     Thrity360E.cpp
-    #dayCount.cpp
-    #I_dayCount.cpp
+    Thrity360A.cpp
 )
 
 # Specify library's header file location

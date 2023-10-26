@@ -7,7 +7,7 @@ namespace dayCount
 {
 
 // 30E/360 daycount. 
-// Also called 30/360 ICMA, 30/360 ISMA, 30S/360, Eurobond basis (ISDA 2006) and Special German
+// Also called 30/360 ICMA, 30/360 ISMA, 30S/360, Eurobond basis. As defined in ISDA 2006, Section 4.16(g)
 class Thirty360E : public I_dayCount
 {
 public:
