@@ -54,3 +54,28 @@ void dayAdjustment::P::adjustDate(finDate& date, std::shared_ptr<I_holidayCalend
         date.addDays(-1);
     }
 }
+
+// adjustDate function for the Modified Previous dayrule class
+void dayAdjustment::MP::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
+{
+    std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
+    std::chrono::month orig_month{ date.year_month_day().month() };
+
+    unsigned int day_of_week{ wd.iso_encoding() };
+
+    if (day_of_week > 5) { date.addDays(day_of_week - 5); } // If weekend; go back
+
+    while (calendar->isHoliday(date) || date.is_weekend()) // while the rolled-to date is not a business day
+    {
+        date.addDays(-1);
+    }
+
+    if (orig_month < date.year_month_day().month()
+        || (orig_month == std::chrono::January && date.year_month_day().month() == std::chrono::December)) 
+    {
+        while (calendar->isHoliday(date) || date.is_weekend()) // If we rolled to a new month, go forward until day is valid.
+        {
+            date.addDays(1);
+        }
+    }
+}

@@ -41,6 +41,14 @@ public:
     virtual ~P() = default;
 };
 
+// Modified Previous dayrule class
+class MP : public I_dayAdjustment
+{
+public:
+    void adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar) override final;
+    virtual ~MP() = default;
+};
+
 // Unadjusted dayrule class
 class Unadjusted : public I_dayAdjustment
 {
