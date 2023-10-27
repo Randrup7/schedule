@@ -7,7 +7,7 @@
 ///////////// Constructors /////////////
 finDate::finDate() : m_date{std::chrono::year{1970}, std::chrono::month{1}, std::chrono::day{1}} {}
 
-finDate::finDate(int year, unsigned int month, unsigned int day) 
+finDate::finDate(int year, int month, int day) 
     : m_date{ std::chrono::year(year) / std::chrono::month(month) / std::chrono::day(day) }
 {
     if (!m_date.ok())
@@ -33,10 +33,10 @@ void finDate::resetSerialDate()
 }
 
 ///////////// Check state /////////////
-unsigned int finDate::days_in_month() const
+int finDate::days_in_month() const
 {
-    unsigned int month = static_cast<unsigned int>(m_date.month());
-    std::array<unsigned int, 12> normal_end_dates{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    int month = static_cast<unsigned int>(m_date.month());
+    std::array<int, 12> normal_end_dates{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
     return (month != 2 || !m_date.year().is_leap() ? normal_end_dates[month - 1] : 29);
 }
@@ -46,9 +46,9 @@ bool finDate::is_leap_year() const
     return m_date.year().is_leap();
 }
 
-unsigned int finDate::day_of_year() const
+int finDate::day_of_year() const
 {
-    std::array<unsigned int, 12> normal_end_dates{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    std::array<int, 12> normal_end_dates{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     unsigned int day_of_year = std::accumulate(normal_end_dates.begin(), std::next(normal_end_dates.begin(), this->month() - 1), 0);
     
     if (this->is_leap_year() && day_of_year >= (31 + 28)) { day_of_year = day_of_year + 1; }
@@ -96,9 +96,9 @@ finDate& finDate::addDays(int days)
 ///////////// Acessors /////////////
 int finDate::year() const { return static_cast<int>(m_date.year()); }
 
-unsigned int finDate::month() const { return static_cast<unsigned int>(m_date.month()); }
+int finDate::month() const { return static_cast<unsigned int>(m_date.month()); }
 
-unsigned int finDate::day() const { return static_cast<unsigned int>(m_date.day()); }
+int finDate::day() const { return static_cast<unsigned int>(m_date.day()); }
 
 int finDate::serialDate() const { return m_serialDate; }
 

@@ -19,13 +19,13 @@ private:
 public:
     // Constructors
     finDate();
-    finDate(int year, unsigned int month, unsigned int day);
+    finDate(int year, int month, int day);
     finDate(const ymd& date);
 
     // Check state
-    unsigned int days_in_month() const;
+    int days_in_month() const;
     bool is_leap_year() const;
-    unsigned int day_of_year() const;
+    int day_of_year() const;
     bool is_weekend() const;
 
     // Arithmetic operations
@@ -35,8 +35,8 @@ public:
 
     // Acessors
     int year() const;
-    unsigned int month() const;
-    unsigned int day() const;
+    int month() const;
+    int day() const;
     int serialDate() const;
     const ymd year_month_day() const;
 

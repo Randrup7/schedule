@@ -2,10 +2,10 @@ add_library(
     dayCount STATIC
     ACT360.cpp
     ACT365.cpp
-    ACT365_25.cpp
+    ACT360_25.cpp
     ACTACT_ISDA.cpp
-    Thrity360E.cpp
-    Thrity360A.cpp
+    Thirty360E.cpp
+    Thirty360A.cpp
 )
 
 # Specify library's header file location
