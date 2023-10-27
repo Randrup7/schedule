@@ -3,8 +3,8 @@
 
 double dayCount::Thirty360A::operator()(const finDate& startDate, const finDate& endDate)
 {
-    unsigned int d1 = std::min<unsigned int>(30, startDate.day());
-    unsigned int d2 = endDate.day();
+    int d1 = std::min<unsigned int>(30, startDate.day());
+    int d2 = endDate.day();
     
     if (d2 == 31 && d1 > 29) { d2 = 30; }
 
