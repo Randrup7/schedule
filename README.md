@@ -7,7 +7,7 @@ The main class of the project in the schedule class. At construction, it creates
 The library is (currently) split into three libraries:
 1. A time library defining dates, intervals and date manipulation functionality.
 2. A daycount library defining different daycount calculations (not needed in creation of schedule)
-3. A schedule library defining different stuc conventions, day adjustment conventions, holiday calendars and more.
+3. A schedule library defining different stub conventions, day adjustment conventions, holiday calendars and more.
 
 ## Possible future add-ons:
 - Implement more calendars
