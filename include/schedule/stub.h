@@ -43,6 +43,13 @@ public:
     virtual ~LongFinal() = default;
 };
 
+class Zero : public I_stub
+{
+public:
+    void fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const interval& freq) override final;
+    virtual ~Zero() = default;
+};
+
 } // namespace stub
 
 #endif

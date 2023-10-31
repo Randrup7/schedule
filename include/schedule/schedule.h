@@ -2,6 +2,7 @@
 #define SCHEDULE_H
 
 #include <vector>
+#include <memory>
 #include "dayAdjustment.h"
 #include "stub.h"
 

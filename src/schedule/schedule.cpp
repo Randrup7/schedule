@@ -1,6 +1,7 @@
 #include "schedule.h"
 #include <algorithm>
 
+
 schedule::schedule(finDate start, finDate maturity, interval freq, 
                     std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
                     std::shared_ptr<I_holidayCalendar> holidayCalendar) 
@@ -12,9 +13,16 @@ schedule::schedule(finDate start, finDate maturity, interval freq,
     {
         throw std::invalid_argument( "schedule Constructor: start date larger than maturity date." );
     }
+
+    if (freq.isZero())
+    {
+        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
+    }
+
     calculateSchedule();
 }
 
+// Constructor with maturity as an interval (from start)
 schedule::schedule(finDate start, interval maturity, interval freq, 
                     std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
                     std::shared_ptr<I_holidayCalendar> holidayCalendar) 
@@ -25,6 +33,11 @@ schedule::schedule(finDate start, interval maturity, interval freq,
     if (maturity.isZero())
     {
         throw std::invalid_argument( "schedule Constructor: maturity cannot be a zero interval." );
+    }
+
+    if (freq.isZero())
+    {
+        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
     }
 
     m_maturity = start + maturity;

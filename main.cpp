@@ -41,10 +41,10 @@ int main()
     #endif
 
     #if 1 // tester schedule
-    schedule sched1{finDate(2023, 1, 6), 10_Y, 3_M, 
-                    std::unique_ptr<I_dayAdjustment>(new dayAdjustment::MF()),
-                    std::unique_ptr<I_stub>(new stub::ShortFinal()),
-                    std::shared_ptr<I_holidayCalendar>(new Calendar::jointCalendar(DKcal, T2)) };
+    schedule sched1{finDate(2023, 1, 6), 10_Y, 0_D, 
+                    std::make_unique<dayAdjustment::MF>(dayAdjustment::MF()),
+                    std::make_unique<stub::ShortFinal>(stub::ShortFinal()),
+                    std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2)) };
     
     sched1.printSchedule();
 

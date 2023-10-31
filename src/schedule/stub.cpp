@@ -56,3 +56,8 @@ void stub::LongFinal::fillSchedule(std::vector<finDate>& paymentDates, const fin
     paymentDates.pop_back();
     paymentDates.push_back(maturity);
 }
+
+void stub::Zero::fillSchedule(std::vector<finDate>& paymentDates, const finDate& start, const finDate& maturity, const interval& freq)
+{
+    paymentDates.assign( {start, maturity} );
+}
