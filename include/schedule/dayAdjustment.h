@@ -3,14 +3,14 @@
 
 #include <chrono>
 #include "../time/date.h"
-#include "holidayCalendar.h"
+#include "../calendars/calendars.h"
 
 // The base interface class for dayadjustments
 class I_dayAdjustment
 {
 public:
     virtual void adjustDate(finDate& date, 
-        std::shared_ptr<I_holidayCalendar> calendar) = 0;
+        std::shared_ptr<I_calendar> calendar) = 0;
     virtual ~I_dayAdjustment() = default;
 };
 
@@ -21,7 +21,7 @@ namespace dayAdjustment
 class MF : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar) override final;
+    void adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar) override final;
     virtual ~MF() = default;
 };
 
@@ -29,7 +29,7 @@ public:
 class F : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar) override final;
+    void adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar) override final;
     virtual ~F() = default;
 };
 
@@ -37,7 +37,7 @@ public:
 class P : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar) override final;
+    void adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar) override final;
     virtual ~P() = default;
 };
 
@@ -45,7 +45,7 @@ public:
 class MP : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar) override final;
+    void adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar) override final;
     virtual ~MP() = default;
 };
 
@@ -53,7 +53,7 @@ public:
 class Unadjusted : public I_dayAdjustment
 {
 public:
-    void adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar) override final {};
+    void adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar) override final {};
     virtual ~Unadjusted() = default;
 };
 

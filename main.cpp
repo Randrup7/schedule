@@ -1,16 +1,16 @@
 #include "schedule.h"
-#include "holidayCalendar.h"
+#include "calendars.h"
 #include "dayCount.h"
 #include <iostream>
 
 int main()
 {
-    std::shared_ptr<I_holidayCalendar> DKcal(new Calendar::DKCO());
-    std::shared_ptr<I_holidayCalendar> T2(new Calendar::TARGET());
+    std::shared_ptr<I_calendar> DKcal(new Calendar::DKCO());
+    std::shared_ptr<I_calendar> T2(new Calendar::TARGET());
 
     // Create two joint calendars, one with inner joined holidays, one with outer joined.
-    std::shared_ptr<I_holidayCalendar> inJoint(new Calendar::jointCalendar(DKcal, T2, true));
-    std::shared_ptr<I_holidayCalendar> outJoint(new Calendar::jointCalendar(DKcal, T2));
+    std::shared_ptr<I_calendar> inJoint(new Calendar::jointCalendar(DKcal, T2, true));
+    std::shared_ptr<I_calendar> outJoint(new Calendar::jointCalendar(DKcal, T2));
     
     #if 0 // Set to 1 to test joint calendars
 

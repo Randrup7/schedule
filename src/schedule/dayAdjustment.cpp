@@ -1,7 +1,7 @@
 #include "dayAdjustment.h"
 
 // adjustDate function for the modified following dayrule class
-void dayAdjustment::MF::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::MF::adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
     std::chrono::month orig_month{ date.year_month_day().month() };
@@ -26,7 +26,7 @@ void dayAdjustment::MF::adjustDate(finDate& date, std::shared_ptr<I_holidayCalen
 }
 
 // adjustDate function for the following dayrule class
-void dayAdjustment::F::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::F::adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
 
@@ -41,7 +41,7 @@ void dayAdjustment::F::adjustDate(finDate& date, std::shared_ptr<I_holidayCalend
 }
 
 // adjustDate function for the previous dayrule class
-void dayAdjustment::P::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::P::adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
 
@@ -56,7 +56,7 @@ void dayAdjustment::P::adjustDate(finDate& date, std::shared_ptr<I_holidayCalend
 }
 
 // adjustDate function for the Modified Previous dayrule class
-void dayAdjustment::MP::adjustDate(finDate& date, std::shared_ptr<I_holidayCalendar> calendar)
+void dayAdjustment::MP::adjustDate(finDate& date, std::shared_ptr<I_calendar> calendar)
 {
     std::chrono::weekday wd{ std::chrono::sys_days(date.year_month_day()) };
     std::chrono::month orig_month{ date.year_month_day().month() };

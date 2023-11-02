@@ -3,7 +3,6 @@ add_library(
     dayAdjustment.cpp
     schedule.cpp
     stub.cpp
-    holidayCalendar.cpp
 )
 
 # Specify library's header file location
@@ -14,3 +13,4 @@ target_include_directories(
 
 # Link this target to the date library, to access the date class
 target_link_libraries(schedule PRIVATE time)
+target_link_libraries(schedule PRIVATE calendars)
