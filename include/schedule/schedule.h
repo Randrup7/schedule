@@ -12,11 +12,18 @@ private:
     finDate m_start; 
     finDate m_maturity;
     interval m_freq;
+
     std::unique_ptr<I_dayAdjustment> m_dayRule;
     std::unique_ptr<I_stub> m_stubConvention;
     std::shared_ptr<I_calendar> m_holidayCalendar;
     
     std::vector<finDate> m_paymentDates;
+
+    
+    finDate m_first; // First regular cpn date, how to handle Zero Cpns
+    finDate m_secondToLast; // last regular cpn date, how to handle Zero Cpns
+
+    
 
     void calculateSchedule();
 
@@ -24,11 +31,11 @@ public:
     // Constructors
     schedule(finDate start, finDate maturity, interval freq, 
             std::unique_ptr<I_dayAdjustment> dayRule, std::unique_ptr<I_stub> stubConvention, 
-            std::shared_ptr<I_calendar> m_holidayCalendar = std::shared_ptr<I_calendar>(new Calendar::noCalendar())); 
+            std::shared_ptr<I_calendar> m_holidayCalendar = std::make_shared<Calendar::noCalendar>(Calendar::noCalendar())); 
 
     schedule(finDate start, interval maturity, interval freq, 
             std::unique_ptr<I_dayAdjustment> dayRule, std::unique_ptr<I_stub> stubConvention, 
-            std::shared_ptr<I_calendar> m_holidayCalendar = std::shared_ptr<I_calendar>(new Calendar::noCalendar())); 
+            std::shared_ptr<I_calendar> m_holidayCalendar = std::make_shared<Calendar::noCalendar>(Calendar::noCalendar())); 
 
     void setFrequency(interval freq);
     void setStart(const finDate& start);

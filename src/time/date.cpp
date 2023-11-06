@@ -133,7 +133,7 @@ finDate& finDate::operator-=(const interval& freq)
 
     default:
         return *this;
-    }    
+    }
 }
 
 finDate& finDate::operator+=(const interval& freq)
@@ -154,7 +154,7 @@ finDate& finDate::operator+=(const interval& freq)
 
     default:
         return *this;
-    }    
+    }
 }
 
 finDate operator+(const finDate& date, const interval& interval)
