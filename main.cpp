@@ -2,15 +2,16 @@
 #include "calendars.h"
 #include "dayCount.h"
 #include <iostream>
+#include <typeinfo>
 
 int main()
-{
-    std::shared_ptr<I_calendar> DKcal(new Calendar::DKCO());
-    std::shared_ptr<I_calendar> T2(new Calendar::TARGET());
+{ //std::make_unique<stub::Zero>(stub::Zero());
+    std::shared_ptr<I_calendar> DKcal = std::make_shared<Calendar::DKCO>(Calendar::DKCO());
+    std::shared_ptr<I_calendar> T2 = std::make_shared<Calendar::TARGET>(Calendar::TARGET());
 
     // Create two joint calendars, one with inner joined holidays, one with outer joined.
-    std::shared_ptr<I_calendar> inJoint(new Calendar::jointCalendar(DKcal, T2, true));
-    std::shared_ptr<I_calendar> outJoint(new Calendar::jointCalendar(DKcal, T2));
+    std::shared_ptr<I_calendar> inJoint = std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2, true));
+    std::shared_ptr<I_calendar> outJoint = std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2));
     
     #if 0 // Set to 1 to test joint calendars
 
@@ -41,7 +42,7 @@ int main()
     #endif
 
     #if 1 // tester schedule
-    schedule sched1{finDate(2023, 1, 6), 10_Y, 0_D, 
+    schedule sched1{finDate(2023, 1, 6), 10_Y, 3_M, 
                     std::make_unique<dayAdjustment::MF>(dayAdjustment::MF()),
                     std::make_unique<stub::ShortFinal>(stub::ShortFinal()),
                     std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2)) };
