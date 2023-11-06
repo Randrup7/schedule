@@ -58,6 +58,12 @@ void schedule::calculateSchedule()
 void schedule::setFrequency(interval freq)
 {
     m_freq = freq;
+    
+    // If new frequency is a zero interval change stub to stub::Zero
+    if (freq.isZero())
+    {
+        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
+    }
     calculateSchedule();
 }
 
@@ -91,6 +97,14 @@ void schedule::setDayrule(std::unique_ptr<I_dayAdjustment> dayRule)
 void schedule::setStubConvention(std::unique_ptr<I_stub> stubConvention)
 {
     m_stubConvention = std::move(stubConvention);
+    
+    // Insert here that if new stub is stub::Zero, then m_freq must also be Zero
+    /*
+    if (freq.isZero())
+    {
+        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
+    }
+    */
     calculateSchedule();
 }
 
