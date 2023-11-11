@@ -99,6 +99,7 @@ void schedule::setStubConvention(std::unique_ptr<I_stub> stubConvention)
     m_stubConvention = std::move(stubConvention);
     
     // Insert here that if new stub is stub::Zero, then m_freq must also be Zero
+    // Maybe have non true virtual function to check if stub isZero
     /*
     if (freq.isZero())
     {

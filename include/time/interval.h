@@ -22,6 +22,7 @@ public:
     unsigned int m_lenght;
     timeUnit m_timeUnit;
     interval(unsigned int lenght = 0, timeUnit timeunit = timeUnit::Zero);
+    double perYear();
 
     bool isZero();
 };
