@@ -40,9 +40,12 @@ public:
     int serialDate() const;
     const ymd year_month_day() const;
 
-    // operators
+    //// operators ////
+    // Arithetic operators (used in interpolation amongst other things)
     int operator-(const finDate& rhs);
     int operator-(const finDate& rhs) const;
+    int operator+(const finDate& rhs);
+    int operator+(const finDate& rhs) const;
 
     finDate& operator-=(const interval& freq);
     finDate& operator+=(const interval& freq);
