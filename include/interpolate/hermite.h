@@ -9,7 +9,7 @@ namespace interpolate
 class hermite : public I_interpolate
 {
 public:
-    double operator()(std::vector<std::pair<double, double>>& coord, double outX) override final;
+    double operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX) override final;
     ~hermite() = default;
 };
 
