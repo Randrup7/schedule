@@ -4,7 +4,7 @@
 #include <iterator>     // std::prev
 
 // generally results seem too low, check formulas
-double interpolate::hyman::operator()(std::vector<std::pair<double, double>>& coord, double outX)
+double interpolate::hyman::operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX)
 {
     using iteratorType = std::vector<std::pair<double, double>>::iterator;
 
