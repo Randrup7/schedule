@@ -1,6 +1,7 @@
 #include "schedule.h"
 #include "calendars.h"
 #include "dayCount.h"
+#include "hermite.h"
 #include <iostream>
 #include <typeinfo>
 
@@ -41,7 +42,7 @@ int main()
 
     #endif
 
-    #if 1 // tester schedule
+    #if 0 // tester schedule
     schedule sched1{finDate(2023, 1, 6), 10_Y, 3_M, 
                     std::make_unique<dayAdjustment::MF>(dayAdjustment::MF()),
                     std::make_unique<stub::ShortFinal>(stub::ShortFinal()),
@@ -71,6 +72,52 @@ int main()
     std::cout << today << '\n';
     today + Freq;
     std::cout << today << '\n';
+
+    #endif
+
+    #if 1 // Testing interpolate
+
+    interpolate::hermite h{};
+
+    std::vector<std::pair<finDate, double>> curve{
+        {finDate(2022,1,1), 5.0},
+        {finDate(2023,1,1), 2.0},
+        {finDate(2024,1,1), 2.5},
+        {finDate(2025,1,1), 5.0}
+    };
+
+    std::pair<finDate, double> out1;
+    std::pair<finDate, double> out2;
+    std::pair<finDate, double> out3;
+    std::pair<finDate, double> out4;
+    std::pair<finDate, double> out5;
+    std::pair<finDate, double> out6;
+    std::pair<finDate, double> out7;
+
+    out1.first = finDate(2021, 12, 1);
+    out2.first = finDate(2022, 1, 1);
+    out3.first = finDate(2022, 7, 1);
+    out4.first = finDate(2023, 7, 1);
+    out5.first = finDate(2024, 7, 1);
+    out6.first = finDate(2025, 1, 1);
+    out7.first = finDate(2025, 2, 1);
+    
+    out1.second = h(curve, out1.first);
+    out2.second = h(curve, out2.first);
+    out3.second = h(curve, out3.first);
+    out4.second = h(curve, out4.first);
+    out5.second = h(curve, out5.first);
+    out6.second = h(curve, out6.first);
+    out7.second = h(curve, out7.first);
+
+    std::cout << "Hermite: \n";
+    std::cout << "x1 = " << out1.first << ", y1 = " << out1.second << '\n';
+    std::cout << "x2 = " << out2.first << ", y2 = " << out2.second << '\n';
+    std::cout << "x3 = " << out3.first << ", y3 = " << out3.second << '\n';
+    std::cout << "x4 = " << out4.first << ", y4 = " << out4.second << '\n';
+    std::cout << "x5 = " << out5.first << ", y5 = " << out5.second << '\n';
+    std::cout << "x6 = " << out6.first << ", y6 = " << out6.second << '\n';
+    std::cout << "x7 = " << out7.first << ", y7 = " << out7.second << '\n';
 
     #endif
 
