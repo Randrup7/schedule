@@ -18,7 +18,7 @@ double interestRate::discountFactor(double t)
     switch (m_comp)
     {
     case compounding::Continuous:
-        return std::exp(-m_rate); // should  ;
+        return std::exp(-m_rate * t);
     
     case compounding::Discrete:
         return 1 / std::pow(1 + m_rate / m_freq.perYear(), m_freq.perYear() * t);
