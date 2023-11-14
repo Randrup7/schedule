@@ -6,11 +6,11 @@
 // generally results seem too low, check formulas
 double interpolate::hyman::operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX)
 {
-    using iteratorType = std::vector<std::pair<double, double>>::iterator;
+    using iteratorType = std::vector<std::pair<finDate, double>>::iterator;
 
     // uBound is first iterator with first-value above outX using lambda function
     iteratorType uBound{ std::upper_bound(coord.begin(), coord.end(), outX, 
-    [](double value,  std::pair<double, double>& coord) { return value < coord.first; } ) };
+    [](finDate value,  std::pair<finDate, double>& coord) { return value < coord.first; } ) };
 
     std::iterator_traits<iteratorType>::difference_type dist{ std::distance(coord.begin(), uBound) };
 
@@ -66,16 +66,11 @@ double interpolate::hyman::operator()(std::vector<std::pair<finDate, double>>& c
 
     // Adjustment to b, Hagen West 2006 equation 27
     // Make sure that the first below is sufficient to conlcude local decreasing monotonicity (second vice versa)
-    if (mi < 0)
-    {
-            bi = std::max(std::min(0.0, bi), 3.0 * std::max(mh, mi));
-            bk = std::max(std::min(0.0, bk), 3.0 * std::max(mi, mk));
-    }
-    if (mi > 0)
-    {
-            bi = std::min(std::max(0.0, bi), 3.0 * std::min(mh, mi));
-            bk = std::min(std::max(0.0, bk), 3.0 * std::min(mi, mk));
-    }
+    if (mi < 0) { bi = std::max(std::min(0.0, bi), 3.0 * std::max(mh, mi)); }
+    if (mi > 0) { bi = std::min(std::max(0.0, bi), 3.0 * std::min(mh, mi)); }
+    
+    if (mk < 0) { bk = std::max(std::min(0.0, bk), 3.0 * std::max(mi, mk)); }
+    if (mk > 0) { bk = std::min(std::max(0.0, bk), 3.0 * std::min(mi, mk)); }
 
     double ci = (3 * mi - bk - 2 * bi) / hi;             // Hagan West 2006 equation 16
     double di = (bk + bi - 2 * mi) * std::pow(hi, -2);   // Hagan West 2006 equation 17

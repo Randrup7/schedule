@@ -1,15 +1,15 @@
-#ifndef LINEAR_H
-#define LINEAR_H
+#ifndef LOGLINEAR_H
+#define LOGLINEAR_H
 
 #include "I_interpolate.h"
 
 namespace interpolate
 {
-class linear : public I_interpolate
+class loglinear : public I_interpolate
 {
 public:
     double operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX) override final;
-    ~linear() = default;
+    ~loglinear() = default;
 };
 
 }

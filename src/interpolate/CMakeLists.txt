@@ -2,7 +2,9 @@ add_library(
     interpolate STATIC
     I_interpolate.cpp
     hermite.cpp
-    #hyman.cpp
+    hyman.cpp
+    linear.cpp
+    loglinear.cpp
 )
 
 # Specify library's header file location

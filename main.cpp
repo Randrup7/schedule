@@ -1,7 +1,7 @@
 #include "schedule.h"
 #include "calendars.h"
 #include "dayCount.h"
-#include "hermite.h"
+#include "interpolate.h"
 #include <iostream>
 #include <typeinfo>
 
@@ -78,12 +78,15 @@ int main()
     #if 1 // Testing interpolate
 
     interpolate::hermite h{};
+    interpolate::hyman hy{};
 
     std::vector<std::pair<finDate, double>> curve{
-        {finDate(2022,1,1), 5.0},
-        {finDate(2023,1,1), 2.0},
-        {finDate(2024,1,1), 2.5},
-        {finDate(2025,1,1), 5.0}
+        {finDate(2017,8,14), 0.8652},
+        {finDate(2018,2,14), 1.2991},
+        {finDate(2019,2,14), 1.8203},
+        {finDate(2020,2,14), 2.5667},
+        {finDate(2022,2,14), 2.8090},
+        {finDate(2027,2,14), 3.9067},
     };
 
     std::pair<finDate, double> out1;
@@ -93,14 +96,20 @@ int main()
     std::pair<finDate, double> out5;
     std::pair<finDate, double> out6;
     std::pair<finDate, double> out7;
+    std::pair<finDate, double> out8;
+    std::pair<finDate, double> out9;
+    std::pair<finDate, double> out10;
 
-    out1.first = finDate(2021, 12, 1);
-    out2.first = finDate(2022, 1, 1);
-    out3.first = finDate(2022, 7, 1);
-    out4.first = finDate(2023, 7, 1);
-    out5.first = finDate(2024, 7, 1);
-    out6.first = finDate(2025, 1, 1);
-    out7.first = finDate(2025, 2, 1);
+    out1.first = finDate(2018, 2, 14);
+    out2.first = finDate(2019, 2, 14);
+    out3.first = finDate(2020, 2, 14);
+    out4.first = finDate(2021, 2, 14);
+    out5.first = finDate(2022, 2, 14);
+    out6.first = finDate(2023, 2, 14);
+    out7.first = finDate(2024, 2, 14);
+    out8.first = finDate(2025, 2, 14);
+    out9.first = finDate(2026, 2, 14);
+    out10.first = finDate(2027, 2, 14);
     
     out1.second = h(curve, out1.first);
     out2.second = h(curve, out2.first);
@@ -109,6 +118,9 @@ int main()
     out5.second = h(curve, out5.first);
     out6.second = h(curve, out6.first);
     out7.second = h(curve, out7.first);
+    out8.second = h(curve, out8.first);
+    out9.second = h(curve, out9.first);
+    out10.second = h(curve, out10.first);
 
     std::cout << "Hermite: \n";
     std::cout << "x1 = " << out1.first << ", y1 = " << out1.second << '\n';
@@ -118,6 +130,32 @@ int main()
     std::cout << "x5 = " << out5.first << ", y5 = " << out5.second << '\n';
     std::cout << "x6 = " << out6.first << ", y6 = " << out6.second << '\n';
     std::cout << "x7 = " << out7.first << ", y7 = " << out7.second << '\n';
+    std::cout << "x8 = " << out8.first << ", y8 = " << out8.second << '\n';
+    std::cout << "x9 = " << out9.first << ", y9 = " << out9.second << '\n';
+    std::cout << "x10 = " << out10.first << ", y10 = " << out10.second << '\n';
+
+    out1.second = hy(curve, out1.first);
+    out2.second = hy(curve, out2.first);
+    out3.second = hy(curve, out3.first);
+    out4.second = hy(curve, out4.first);
+    out5.second = hy(curve, out5.first);
+    out6.second = hy(curve, out6.first);
+    out7.second = hy(curve, out7.first);
+    out8.second = hy(curve, out8.first);
+    out9.second = hy(curve, out9.first);
+    out10.second = hy(curve, out10.first);
+
+    std::cout << "Hyman: \n";
+    std::cout << "x1 = " << out1.first << ", y1 = " << out1.second << '\n';
+    std::cout << "x2 = " << out2.first << ", y2 = " << out2.second << '\n';
+    std::cout << "x3 = " << out3.first << ", y3 = " << out3.second << '\n';
+    std::cout << "x4 = " << out4.first << ", y4 = " << out4.second << '\n';
+    std::cout << "x5 = " << out5.first << ", y5 = " << out5.second << '\n';
+    std::cout << "x6 = " << out6.first << ", y6 = " << out6.second << '\n';
+    std::cout << "x7 = " << out7.first << ", y7 = " << out7.second << '\n';
+    std::cout << "x8 = " << out8.first << ", y8 = " << out8.second << '\n';
+    std::cout << "x9 = " << out9.first << ", y9 = " << out9.second << '\n';
+    std::cout << "x10 = " << out10.first << ", y10 = " << out10.second << '\n';
 
     #endif
 

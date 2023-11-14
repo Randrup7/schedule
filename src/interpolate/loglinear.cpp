@@ -1,8 +1,9 @@
-#include "linear.h"
+#include "loglinear.h"
 #include <algorithm>    // std::upper_bound
 #include <iterator>     // std::prev
+#include <cmath>        // std::pow
 
-double interpolate::linear::operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX)
+double interpolate::loglinear::operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX)
 {
     using iteratorType = std::vector<std::pair<finDate, double>>::iterator;
 
@@ -12,6 +13,7 @@ double interpolate::linear::operator()(std::vector<std::pair<finDate, double>>& 
 
     // lBound is iterator before uBound
     iteratorType lBound = std::prev(uBound, 1);
+    double hi = uBound->first - lBound->first;              // lenght between x-coordinates lBound and uBound
 
     // dist is distance from first pair to uBound
     std::iterator_traits<iteratorType>::difference_type dist{ std::distance(coord.begin(), uBound) };
@@ -21,6 +23,7 @@ double interpolate::linear::operator()(std::vector<std::pair<finDate, double>>& 
 
     else 
     {
-        return ((uBound->first - outX) * lBound->second + (lBound->first - outX) * uBound->second) / (uBound->first - lBound->first); // linear
+        return std::pow(uBound->second, (outX - lBound->first) / hi) * 
+                std::pow(lBound->second, (uBound->first - outX) / hi);         // Hagen West 2006 Equation 10
     }
 }
