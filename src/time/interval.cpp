@@ -31,6 +31,29 @@ double interval::perYear()
     }
 }
 
+const double interval::perYear() const
+{
+    switch (m_timeUnit)
+    {
+    case timeUnit::Days:
+        return 365 / m_lenght; 
+
+    case timeUnit::Weeks:
+        return 365 / 52;
+    
+    case timeUnit::Months:
+        return 12 / m_lenght;
+    
+    case timeUnit::Years:
+        return 1 / m_lenght;
+    
+    case timeUnit::Zero:
+        return 0;
+    default:
+        return 0;
+    }
+}
+
 // User defined Literals for intervals
 interval operator ""_D(unsigned long long int D) { return interval(D, timeUnit::Days); }
 interval operator ""_W(unsigned long long int W) { return interval(W, timeUnit::Weeks); }

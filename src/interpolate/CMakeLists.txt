@@ -1,8 +1,7 @@
 add_library(
     interpolate STATIC
     I_interpolate.cpp
-    hermite.cpp
-    hyman.cpp
+    cubic.cpp
     linear.cpp
     loglinear.cpp
 )

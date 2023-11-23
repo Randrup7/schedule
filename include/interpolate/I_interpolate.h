@@ -6,11 +6,11 @@
 #include "../time/date.h"
 
 // Base interface class for interpolate
+template <typename X, typename Y>
 class I_interpolate
 {
 public:
-
-    virtual double operator()(std::vector<std::pair<finDate, double>>& coord, finDate outX) = 0;
+    virtual Y operator()(const std::vector<std::pair<X, Y>>& coord, const X& outX) = 0;
     virtual ~I_interpolate() = default;
 };
 

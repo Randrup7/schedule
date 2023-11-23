@@ -23,6 +23,7 @@ public:
     timeUnit m_timeUnit;
     interval(unsigned int lenght = 0, timeUnit timeunit = timeUnit::Zero);
     double perYear();
+    const double perYear() const;
 
     bool isZero();
 };
