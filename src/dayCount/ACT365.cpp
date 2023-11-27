@@ -2,5 +2,5 @@
 
 double dayCount::ACT365::operator()(const finDate& startDate, const finDate& endDate)
 {
-    return (startDate - endDate) / 365.0;
+    return (endDate - startDate) / 365.0;
 }

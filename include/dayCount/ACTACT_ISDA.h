@@ -7,6 +7,7 @@ namespace dayCount
 {
 class ACTACT_ISDA : public I_dayCount
 {
+public:
     double operator()(const finDate& startDate, const finDate& endDate) override final;
     ~ACTACT_ISDA() = default;
 };

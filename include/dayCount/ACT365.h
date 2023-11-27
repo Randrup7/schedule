@@ -7,6 +7,7 @@ namespace dayCount
 {
 class ACT365 : public I_dayCount
 {
+public:
     double operator()(const finDate& startDate, const finDate& endDate) override final;
     ~ACT365() = default;
 };

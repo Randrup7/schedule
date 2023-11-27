@@ -6,10 +6,10 @@ double dayCount::ACTACT_ISDA::operator()(const finDate& startDate, const finDate
     // then over 365
     if (!startDate.is_leap_year() && !endDate.is_leap_year() && (endDate.year() - startDate.year()) < 4)
     {
-        return (startDate - endDate) / 365.0;
+        return (endDate - startDate) / 365.0;
     }
     
     
     
-    return (startDate - endDate) / 365.0;
+    return (endDate - startDate) / 365.0;
 }
