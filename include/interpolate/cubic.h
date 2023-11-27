@@ -55,7 +55,7 @@ interpolate::cubic<X, Y>::cubic(interpolate::DerivativeMethod derivativeMethod, 
 
 // Requirements for X and Y are:
 //      X must support the less than "<" operator
-//      X must support "-", "+" and return a double
+//      X and Y must support "-", "+" and return a double
 template <typename X, typename Y>
 Y interpolate::cubic<X, Y>::operator()(const std::vector<std::pair<X, Y>>& coord, const X& outX)
 {
@@ -84,13 +84,13 @@ Y interpolate::cubic<X, Y>::operator()(const std::vector<std::pair<X, Y>>& coord
     double fDiffi;                                                        // Derivative at lBound knot
     double fDiffj;                                                        // Derivative at uBound knot
 
-
     if (dist == coord.size()) { return coord.back().second; }   // Flat extrapolation
     if (dist == 0) { return coord.front().second; }             // Flat extrapolation
 
     switch (m_derivativeMethod)
     {
     case DerivativeMethod::Hermite:
+    {
         // Implementing the cubic Hermite interpolation (Hagen West 2006 and de Boor 1978, 2001, Chapter IV Equation 9
         if (dist == 1) // when lbound - 1 doesn't exist
         {   
@@ -117,24 +117,66 @@ Y interpolate::cubic<X, Y>::operator()(const std::vector<std::pair<X, Y>>& coord
             fDiffj = (dxj * dyi + dxi * dyj) / (dxj + dxi);
         }
         break; // Hermite end
-    
+    }
     case DerivativeMethod::Akima:
-        //if (/* dyi-2 = m_i-1 != dyi = dyi+1 */) // Do te same for fDiffj
-        //{}
-        //else
-        {
-        fDiffi = 0.0;
+    {
+        double dyg = (std::prev(lBound, 1)->second - std::prev(lBound, 2)->second) / 
+                    (std::prev(lBound, 1)->first - std::prev(lBound, 2)->first);
 
-        fDiffj = 0.0;
-        }
+        double dyk = (std::next(uBound, 2)->second - std::next(uBound, 1)->second) / 
+                    (std::next(uBound, 2)->first - std::next(uBound, 1)->first);
         
+        // Akima Equation 1
+        if (dist == 1) // here dyh is not valid
+        {
+            fDiffi = 0;
 
+            if (dyk == dyj && dyj != dyi && dyi == dyh) { fDiffj = (dyi + dyj) / 2.0; }
+            else
+            {
+                fDiffj = (std::abs(dyk - dyj) * dyi + std::abs(dyi - dyh) * dyj) / 
+                    (std::abs(dyk - dyj) + std::abs(dyi - dyh));
+            }
+        }
+        else if (dist == coord.size() - 1) // here dyj is not valid
+        {
+            fDiffi = (std::abs(dyj - dyi) * dyh + std::abs(dyh - dyg) * dyi) / 
+                (std::abs(dyj - dyi) + std::abs(dyh - dyg));
+
+            fDiffj = 0;
+        }
+        else
+        {
+            if (dyj == dyi && dyi != dyh && dyh == dyg) { fDiffi = (dyh + dyi) / 2.0; }
+            else
+            {
+                fDiffi = (std::abs(dyj - dyi) * dyh + std::abs(dyh - dyg) * dyi) / 
+                    (std::abs(dyj - dyi) + std::abs(dyh - dyg));
+            }
+
+            if (dyk == dyj && dyj != dyi && dyi == dyh) { fDiffj = (dyi + dyj) / 2.0; }
+            else
+            {
+            fDiffj = (std::abs(dyk - dyj) * dyi + std::abs(dyi - dyh) * dyj) / 
+                    (std::abs(dyk - dyj) + std::abs(dyi - dyh));
+            }
+        }
         break;
+    }
     case DerivativeMethod::FritschButland:
+    {
+        fDiffi = 0;
+        fDiffj = 0;
         break;
+    }
     case DerivativeMethod::FritschCarlson:
+    {
+        fDiffi = 0;
+        fDiffj = 0;
         break;
+    }
     case DerivativeMethod::Kruger:
+    {
         // Implementing the Kruger method from "Constrained Cubic Spline Interpolation" by CJC Kruger
         if (dist == 1)
         {
@@ -159,16 +201,32 @@ Y interpolate::cubic<X, Y>::operator()(const std::vector<std::pair<X, Y>>& coord
             else { fDiffj = (2.0 * dyi * dyj) / (dyi + dyj); }
         }
         break; // Kruger end
+    }
     case DerivativeMethod::FourthOrder:
-        break;
-    case DerivativeMethod::Harmonic:
-        break;
-    case DerivativeMethod::Parabolic:
-        break;
-    default:
+    {
+        fDiffi = 0;
+        fDiffj = 0;
         break;
     }
-
+    case DerivativeMethod::Harmonic:
+    {
+        fDiffi = 0;
+        fDiffj = 0;
+        break;
+    }
+    case DerivativeMethod::Parabolic:
+    {
+        fDiffi = 0;
+        fDiffj = 0;
+        break;
+    }
+    default:
+    {
+        fDiffi = 0;
+        fDiffj = 0;
+        break;
+    }
+    }
 
     if (m_monotone) // Applying Hyman's monotonocity filter
     {
@@ -189,11 +247,11 @@ Y interpolate::cubic<X, Y>::operator()(const std::vector<std::pair<X, Y>>& coord
         }
     }
 
-    double ai = lBound->second;
+    //double ai = lBound->second;
     double ci = (3.0 * dyi - fDiffj - 2.0 * fDiffi) / dxi;         // Hagan West 2006 equation 16
     double di = (fDiffj + fDiffi - 2.0 * dyi) / (dxi * dxi);      // Hagan West 2006 equation 17
 
-    return ai + fDiffi * tau + ci * tau * tau + di * tau * tau * tau;
+    return lBound->second + fDiffi * tau + ci * tau * tau + di * tau * tau * tau;
 }
 
 #endif
