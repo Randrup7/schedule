@@ -2,6 +2,7 @@
 #include "calendars.h"
 #include "dayCount.h"
 #include "interpolate.h"
+#include "interestRate.h"
 #include <iostream>
 #include <typeinfo>
 
@@ -77,19 +78,27 @@ int main()
 
     #if 1 // Testing interpolate
 
-    interpolate::cubic<finDate, double> hermite(interpolate::DerivativeMethod::Hermite, false);
-    interpolate::cubic<finDate, double> hermiteMono(interpolate::DerivativeMethod::Kruger, false);
+    interpolate::cubic<finDate, interestRate> hermite(interpolate::DerivativeMethod::Hermite, false);
+    std::shared_ptr<I_interpolate<finDate, interestRate>> hermiteMono = std::make_shared<interpolate::cubic<finDate, interestRate>>(interpolate::DerivativeMethod::Hermite, false);
+    //std::make_shared<I_interpolate<finDate, interestRate>() interpolate::cubic<finDate, interestRate> hermiteMono(interpolate::DerivativeMethod::Kruger, false);
 
-    std::vector<std::pair<finDate, double>> curve{
-        {finDate(2017,8,14), 0.8652},
-        {finDate(2018,2,14), 1.2991},
-        {finDate(2019,2,14), 1.8203},
-        {finDate(2020,2,14), 2.5667},
-        {finDate(2022,2,14), 2.5667},
-        {finDate(2027,2,14), 1.8203},
+    std::vector<std::pair<finDate, interestRate>> curve{
+        {finDate(2017,8,14), 0.008652},
+        {finDate(2018,2,14), 0.012991},
+        {finDate(2019,2,14), 0.018203},
+        {finDate(2020,2,14), 0.025667},
+        {finDate(2022,2,14), 0.025667},
+        {finDate(2027,2,14), 0.018203},
     };
 
-    std::array<std::pair<finDate, double>, 10> output;
+    double fwdr = forwardRate(finDate(2017,8,14), finDate(2018,7,14), finDate(2019,7,14), curve, 
+                                hermiteMono,
+                                std::make_shared<dayCount::ACT365>(dayCount::ACT365()));
+
+    std::cout << fwdr << '\n';
+
+    /*
+    std::array<std::pair<finDate, interestRate>, 10> output;
     
     output[0].first = finDate(2018, 2, 14);
     output[1].first = finDate(2019, 2, 14);
@@ -109,12 +118,13 @@ int main()
         std::cout << "x" << i << " = " << output[i].first << ", y" << i << " = " << output[i].second << '\n';
     }
 
-    std::cout << "Hermite with Hyman: \n";
+    std::cout << "Kruger: \n";
     for (size_t i = 0; i < 10; i++)
     {
         output[i].second = hermiteMono(curve, output[i].first);
         std::cout << "x" << i << " = " << output[i].first << ", y" << i << " = " << output[i].second << '\n';
     }
+    */
 
     #endif
 
