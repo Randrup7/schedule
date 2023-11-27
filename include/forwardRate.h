@@ -18,12 +18,14 @@ private:
     std::shared_ptr<I_dayCount> m_daycount;
     std::shared_ptr<I_dayAdjustment> m_dayAdjustment;
     std::shared_ptr<I_calendar> m_calendar;
-    std::shared_ptr<I_interpolate> m_interpolate;
+
+    std::vector<std::pair<finDate, double>> m_curve;
+    std::shared_ptr<I_interpolate<finDate, double>> m_interpolate;
 
 public:
-    forwardRate(finDate anchor, finDate start, finDate maturity, 
+    forwardRate(finDate anchor, finDate start, finDate maturity, std::vector<std::pair<finDate, double>> curve, 
                 std::shared_ptr<I_dayCount> daycount, std::shared_ptr<I_dayAdjustment> dayAdjustment,
-                std::shared_ptr<I_calendar> calendar, std::shared_ptr<I_interpolate> interpolate);
+                std::shared_ptr<I_calendar> calendar, std::shared_ptr<I_interpolate<finDate, double>> interpolate);
     ~forwardRate() = default;
 };
 
