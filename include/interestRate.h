@@ -19,21 +19,31 @@ enum class compounding
 class interestRate
 {
 public:
-    interestRate(double rate, interval freq, compounding comp);
-
     double m_rate;
     compounding m_comp;
     interval m_freq;
 
+    interestRate();
+    interestRate(double rate, interval freq, compounding comp);
+    interestRate(double rate);
+
+    double operator-(const interestRate& rhs);
+    double operator-(const interestRate& rhs) const;
+    double operator+(const interestRate& rhs);
+    double operator+(const interestRate& rhs) const;
+
+    friend std::ostream& operator<<(std::ostream& out, const interestRate& rhs);
+
     ~interestRate() = default;
 };
 
-
 double discountFactor(const interestRate& rate, double t);
+double discountFactor(const interestRate& rate, double t, compounding comp);
 
-double forwardRate(finDate anchor, finDate start, finDate maturity, 
-                std::shared_ptr<I_dayCount> daycount, std::shared_ptr<I_dayAdjustment> dayAdjustment,
-                std::shared_ptr<I_calendar> calendar, std::shared_ptr<I_interpolate> interpolate);
+double forwardRate(const finDate& anchor, const finDate& start, const finDate& maturity, 
+                    const std::vector<std::pair<finDate, interestRate>>& curve, 
+                    std::shared_ptr<I_interpolate<finDate, interestRate>> interpolate,
+                    std::shared_ptr<I_dayCount> daycount); //, std::shared_ptr<I_dayAdjustment> dayAdjustment);
 
 
 #endif
