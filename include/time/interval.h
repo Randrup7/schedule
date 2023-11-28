@@ -26,6 +26,12 @@ public:
     const double perYear() const;
 
     bool isZero();
+    bool isZero() const;
+
+    bool operator<(const interval& rhs);
+    bool operator<(const interval& rhs) const;
+    bool operator>(const interval& rhs);
+    bool operator>(const interval& rhs) const;
 };
 
 

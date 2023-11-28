@@ -8,6 +8,11 @@ bool interval::isZero()
     return (m_lenght == 0 || m_timeUnit == timeUnit::Zero);
 }
 
+bool interval::isZero() const
+{
+    return (m_lenght == 0 || m_timeUnit == timeUnit::Zero);
+}
+
 double interval::perYear()
 {
     switch (m_timeUnit)
@@ -33,6 +38,8 @@ double interval::perYear()
 
 const double interval::perYear() const
 {
+    if (this->isZero()) { return 0; }
+    
     switch (m_timeUnit)
     {
     case timeUnit::Days:
@@ -53,6 +60,11 @@ const double interval::perYear() const
         return 0;
     }
 }
+
+bool interval::operator<(const interval& rhs)       { return this->perYear() > rhs.perYear(); }
+bool interval::operator<(const interval& rhs) const { return this->perYear() > rhs.perYear(); }
+bool interval::operator>(const interval& rhs)       { return this->perYear() < rhs.perYear(); }
+bool interval::operator>(const interval& rhs) const { return this->perYear() < rhs.perYear(); }
 
 // User defined Literals for intervals
 interval operator ""_D(unsigned long long int D) { return interval(D, timeUnit::Days); }
