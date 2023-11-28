@@ -10,12 +10,26 @@ int main()
 {
     std::shared_ptr<I_calendar> DKcal = std::make_shared<Calendar::DKCO>(Calendar::DKCO());
     std::shared_ptr<I_calendar> T2 = std::make_shared<Calendar::TARGET>(Calendar::TARGET());
-
-    // Create two joint calendars, one with inner joined holidays, one with outer joined.
-    std::shared_ptr<I_calendar> inJoint = std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2, true));
     std::shared_ptr<I_calendar> outJoint = std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2));
     
+    std::shared_ptr<dayCount::ACT360> daycount = std::make_shared<dayCount::ACT360>(dayCount::ACT360());
+    std::shared_ptr<dayAdjustment::MF> dayAdj = std::make_shared<dayAdjustment::MF>(dayAdjustment::MF());
+    std::shared_ptr<stub::ShortInitial> shortInitialStub = std::make_shared<stub::ShortInitial>(stub::ShortInitial());
+
+    std::shared_ptr<I_interpolate<finDate, interestRate>> hermiteMono = std::make_shared<interpolate::cubic<finDate, interestRate>>(interpolate::DerivativeMethod::Hermite, false);
+
+    std::vector<std::pair<finDate, interestRate>> curve{
+        {finDate(2017,8,14), 0.008652},
+        {finDate(2018,2,14), 0.012991},
+        {finDate(2019,2,14), 0.018203},
+        {finDate(2020,2,14), 0.025667},
+        {finDate(2022,2,14), 0.025667},
+        {finDate(2027,2,14), 0.018203},
+    };
+
     #if 0 // Set to 1 to test joint calendars
+
+    std::shared_ptr<I_calendar> inJoint = std::make_shared<Calendar::jointCalendar>(Calendar::jointCalendar(DKcal, T2, true));
 
     // Dates to test:
     finDate labourDay{ 2023, 5, 1 };    // this is target holiday, but not DK
@@ -76,28 +90,10 @@ int main()
 
     #endif
 
-    #if 1 // Testing interpolate
+    #if 0 // Testing interpolate
 
     interpolate::cubic<finDate, interestRate> hermite(interpolate::DerivativeMethod::Hermite, false);
-    std::shared_ptr<I_interpolate<finDate, interestRate>> hermiteMono = std::make_shared<interpolate::cubic<finDate, interestRate>>(interpolate::DerivativeMethod::Hermite, false);
-    //std::make_shared<I_interpolate<finDate, interestRate>() interpolate::cubic<finDate, interestRate> hermiteMono(interpolate::DerivativeMethod::Kruger, false);
 
-    std::vector<std::pair<finDate, interestRate>> curve{
-        {finDate(2017,8,14), 0.008652},
-        {finDate(2018,2,14), 0.012991},
-        {finDate(2019,2,14), 0.018203},
-        {finDate(2020,2,14), 0.025667},
-        {finDate(2022,2,14), 0.025667},
-        {finDate(2027,2,14), 0.018203},
-    };
-
-    double fwdr = forwardRate(finDate(2017,8,14), finDate(2018,7,14), finDate(2019,7,14), curve, 
-                                hermiteMono,
-                                std::make_shared<dayCount::ACT365>(dayCount::ACT365()));
-
-    std::cout << fwdr << '\n';
-
-    /*
     std::array<std::pair<finDate, interestRate>, 10> output;
     
     output[0].first = finDate(2018, 2, 14);
@@ -124,9 +120,20 @@ int main()
         output[i].second = hermiteMono(curve, output[i].first);
         std::cout << "x" << i << " = " << output[i].first << ", y" << i << " = " << output[i].second << '\n';
     }
-    */
+    
 
     #endif
+
+
+    double ann = annuity(finDate(2017,8,14), finDate(2017,8,14), finDate(2025,8,14), 3_M, curve, 
+                    hermiteMono, daycount, dayAdj, shortInitialStub, outJoint);
+    
+    std::cout << ann << '\n';
+
+    double floatPV = floatingPV(finDate(2017,8,14), finDate(2017,8,14), finDate(2025,8,14), 3_M, curve, curve, 
+                                hermiteMono, daycount, dayAdj, shortInitialStub, outJoint);
+    
+    std::cout << floatPV << '\n';
 
     return 0;
 }
