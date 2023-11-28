@@ -1,11 +1,11 @@
 #include "schedule.h"
 #include <algorithm>
 
-schedule::schedule(finDate start, finDate maturity, interval freq, 
-                    std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
+schedule::schedule(const finDate& start, const finDate& maturity, const interval& freq, 
+                    std::shared_ptr<I_dayAdjustment> dayrule, std::shared_ptr<I_stub> stubConvention,
                     std::shared_ptr<I_calendar> holidayCalendar) 
                     : m_start{ start }, m_maturity{ maturity}, m_freq{ freq }, 
-                    m_dayRule{ std::move(dayrule) }, m_stubConvention{ std::move(stubConvention) },
+                    m_dayRule{ dayrule }, m_stubConvention{ stubConvention },
                     m_holidayCalendar{ holidayCalendar }
 {
     if (start >= maturity)
@@ -15,7 +15,7 @@ schedule::schedule(finDate start, finDate maturity, interval freq,
 
     if (freq.isZero())
     {
-        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
+        m_stubConvention = std::make_shared<stub::Zero>(stub::Zero());
     }
 
     calculateSchedule();
@@ -23,10 +23,10 @@ schedule::schedule(finDate start, finDate maturity, interval freq,
 
 // Constructor with maturity as an interval (from start)
 schedule::schedule(finDate start, interval maturity, interval freq, 
-                    std::unique_ptr<I_dayAdjustment> dayrule, std::unique_ptr<I_stub> stubConvention,
+                    std::shared_ptr<I_dayAdjustment> dayrule, std::shared_ptr<I_stub> stubConvention,
                     std::shared_ptr<I_calendar> holidayCalendar) 
                     : m_start{ start }, m_freq{ freq }, 
-                    m_dayRule{ std::move(dayrule) }, m_stubConvention{ std::move(stubConvention) },
+                    m_dayRule{ dayrule }, m_stubConvention{ stubConvention },
                     m_holidayCalendar{ holidayCalendar }
 {
     if (maturity.isZero())
@@ -36,7 +36,7 @@ schedule::schedule(finDate start, interval maturity, interval freq,
 
     if (freq.isZero())
     {
-        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
+        m_stubConvention = std::make_shared<stub::Zero>(stub::Zero());
     }
 
     m_maturity = start + maturity;
@@ -62,7 +62,7 @@ void schedule::setFrequency(interval freq)
     // If new frequency is a zero interval change stub to stub::Zero
     if (freq.isZero())
     {
-        m_stubConvention = std::make_unique<stub::Zero>(stub::Zero());
+        m_stubConvention = std::make_shared<stub::Zero>(stub::Zero());
     }
     calculateSchedule();
 }
@@ -88,15 +88,15 @@ void schedule::setMaturity(const finDate& maturity)
     calculateSchedule();
 }
 
-void schedule::setDayrule(std::unique_ptr<I_dayAdjustment> dayRule)
+void schedule::setDayrule(std::shared_ptr<I_dayAdjustment> dayRule)
 {
-    m_dayRule = std::move(dayRule);
+    m_dayRule = dayRule;
     calculateSchedule();
 }
 
-void schedule::setStubConvention(std::unique_ptr<I_stub> stubConvention)
+void schedule::setStubConvention(std::shared_ptr<I_stub> stubConvention)
 {
-    m_stubConvention = std::move(stubConvention);
+    m_stubConvention = stubConvention;
     
     // Insert here that if new stub is stub::Zero, then m_freq must also be Zero
     // Maybe have non true virtual function to check if stub isZero
