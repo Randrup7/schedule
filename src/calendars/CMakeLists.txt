@@ -1,6 +1,7 @@
 add_library(
     calendars STATIC
     DKCO.cpp
+    FRPA.cpp
     TARGET.cpp
     jointCalendar.cpp
     noCalendar.cpp
