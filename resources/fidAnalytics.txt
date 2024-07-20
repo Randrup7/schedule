@@ -1,0 +1,1175 @@
+Option Base 1
+' This setting means that indexing in arrays (think matrices) are done
+' with 1 being the first index rather than the default 0. This means that the
+' element in the upper left hand corner of a matrix called "data" is data(1,1).
+Option Explicit
+' This setting means that all variables should be declared before they are used.
+' Undeclared variables will cause an error. This is helpful to make sure that do not
+' misspell variables and that you use correct data formats.
+
+Public Function fidAddTenor(StartDate As Variant, Tenor As Variant, Optional DayRule As String) As Variant
+' This function adds a so called tenor - i.e. a day, two weeks, three months or 10 years to a given date.
+' The tenor is specified as 1D, 2W, 3M or 10Y etc. The DayRule sets the treatment of non-business days.
+
+Dim TenorType As String, TenorNumber As Integer, AnnDate As Date, DayAdd As Integer
+
+' First we need to identify the type of tenor, we are working with (D, W, M or Y).
+TenorType = Right(Tenor, 1) 'Find the right most character
+TenorNumber = Left(Tenor, Len(Tenor) - 1) 'Find all other characters
+
+Select Case LCase(TenorType)
+    Case "b": TenorType = "w"
+    Case "d": TenorType = "d"
+    Case "w": TenorType = "ww"
+    Case "m": TenorType = "m"
+    Case "y": TenorType = "yyyy"
+    Case Else: GoTo ErrHandler
+End Select
+
+AnnDate = DateAdd(TenorType, TenorNumber, StartDate) ' Find the unadjusted anniversary date
+                                                     ' DateAdd() is a built-in VBA function.
+
+If LCase(DayRule) = "none" Or LCase(DayRule) = "" Then
+    DayAdd = 0
+ElseIf LCase(DayRule) = "p" Then
+'The "Preceding" case: Roll adjusted date back in time
+    Select Case Weekday(AnnDate, vbMonday)
+        Case 1 To 5: DayAdd = 0
+        Case 6: DayAdd = -1
+        Case 7: DayAdd = -2
+    End Select
+ElseIf LCase(DayRule) = "f" Or LCase(DayRule) = "mf" Then
+'The "Following" and "Modified Following" case: Roll adjusted date forward in time
+    Select Case Weekday(AnnDate, vbMonday)
+        Case 1 To 5: DayAdd = 0
+        Case 6: DayAdd = 2
+        Case 7: DayAdd = 1
+    End Select
+Else
+    DayAdd = 0
+End If
+
+fidAddTenor = DateAdd("d", DayAdd, AnnDate) 'Add the date adjustment to anniversary date
+
+'Do final check to see if adjusted date has been rolled
+'into a new month for the modified following case. If that is the case,
+'roll the adjustment back to before the weekend.
+If Month(fidAddTenor) <> Month(AnnDate) And LCase(DayRule) = "mf" Then
+    fidAddTenor = DateAdd("d", DayAdd - 3, AnnDate)
+End If
+Exit Function
+ErrHandler:
+    fidAddTenor = "Error: Invalid TenorType"
+End Function
+Public Function fidAdjustDate(StartDate As Variant, DayRule As String) As Date
+    fidAdjustDate = fidAddTenor(StartDate, "0D", DayRule)
+End Function
+Public Function fidCvg(StartDate As Variant, EndDate As Variant, DayCountBasis As String) As Double
+
+Select Case LCase(DayCountBasis)
+    Case "act/360": fidCvg = (EndDate - StartDate) / 360
+    Case "act/365": fidCvg = (EndDate - StartDate) / 365
+    Case "act/365.25": fidCvg = (EndDate - StartDate) / 365.25
+    Case "30/360": fidCvg = ((Year(EndDate) - Year(StartDate)) * 360 _
+                            + (Month(EndDate) - Month(StartDate)) * 30 _
+                            + Application.Min(30, Day(EndDate)) - Application.Min(30, Day(StartDate))) / 360
+End Select
+End Function
+Public Function fidGenerateSchedule(AnchorDate As Date, Start As Variant, Maturity As Variant, Frequency As String, DayCountBasis As String, DayRule As String) As Variant
+' This function takes either a tenor e.g. "10Y" or a specific date as input.
+' If a specific date is entered, stubs - i.e. a non-tenor conform period - is rolled to the back
+
+Dim UnAdjStart As Date, UnAdjMat As Date, AdjStart As Date, AdjMat As Date
+Dim TenorNumber As Integer, n As Integer, i As Integer, j As Integer, K As Integer
+Dim rows As Integer
+Dim TenorType As String
+
+' First we need to identify the undajusted start and maturity dates
+
+If IsDate(Start) And IsDate(Maturity) Then
+    UnAdjStart = Start
+    AdjStart = fidAdjustDate(UnAdjStart, DayRule)
+    UnAdjMat = Maturity
+ElseIf IsDate(Start) Then
+    UnAdjStart = Start
+    AdjStart = fidAdjustDate(UnAdjStart, DayRule)
+    UnAdjMat = fidAddTenor(Start, Maturity, "")
+ElseIf IsDate(Maturity) Then
+    UnAdjStart = fidAddTenor(AnchorDate, Start, "")
+    AdjStart = fidAdjustDate(UnAdjStart, DayRule)
+    UnAdjMat = Maturity
+Else
+    UnAdjStart = fidAddTenor(AnchorDate, Start, "")
+    AdjStart = fidAdjustDate(UnAdjStart, DayRule)
+    UnAdjMat = fidAddTenor(AdjStart, Maturity, "")
+End If
+
+' Secondly, we adjust the UnAdjMat according to the DayRule convention
+
+AdjMat = fidAdjustDate(UnAdjMat, DayRule)
+    
+' Thirdly, we construct a set of unadjusted end-dates.
+' For this purpose we need a vector of dates, and an "estimate" of how long this should be.
+
+n = Application.RoundUp((UnAdjMat - UnAdjStart) / (fidAddTenor(AnchorDate, Frequency, "") - AnchorDate), 0)
+
+' We need to identify the type of tenor, we are working with (D, W, M or Y).
+TenorType = Right(Frequency, 1) 'Find the right most character
+TenorNumber = Left(Frequency, Len(Frequency) - 1) 'Find all other characters
+
+Dim dates As Variant
+ReDim dates(n + 5)  ' Add 5 extra rows just to be sure, this is an alternative
+                    ' to implementing a lot of logic to identify exactly how many
+                    ' even periods (of an arbitrary tenor) there are in between two dates.
+i = 1
+dates(1) = UnAdjMat ' Now, roll the dates backwards through time, note the "-" in fidAddTenor below
+Do While fidAdjustDate(dates(i), DayRule) > AdjStart
+    dates(i + 1) = WorksheetFunction.Max(fidAddTenor(dates(1), -i * TenorNumber & TenorType, ""), AdjStart)
+    i = i + 1
+Loop
+
+ReDim Preserve dates(i)
+    
+' Finally, we need to dimension an array (data) that can hold all the dates and coverages.
+Dim data, temp As Variant
+    
+ReDim data(i - 1, 5) As Variant
+For j = 1 To i - 1
+    If j = 1 Then
+        data(j, 1) = UnAdjStart
+    Else
+        data(j, 1) = dates(i - (j - 1))
+    End If
+    data(j, 2) = dates(i - j)
+    data(j, 3) = fidAdjustDate(data(j, 1), DayRule)
+    data(j, 4) = fidAdjustDate(data(j, 2), DayRule)
+    data(j, 5) = fidCvg(data(j, 3), data(j, 4), DayCountBasis)
+Next j
+    
+fidGenerateSchedule = data
+End Function
+Public Function fidInterpolate(KnownX As Variant, KnownY As Variant, OutputX As Variant, Method As String) As Variant
+Dim n As Integer, j As Integer, i As Integer
+KnownX = CVar(KnownX)
+KnownY = CVar(KnownY)
+    
+    n = UBound(KnownX) ' Count the number of rows
+    
+If n <> UBound(KnownY) Then ' Check if KnownX and KnownY has the same # or rows.
+    GoTo ErrHandler
+End If
+
+' Regardless of interpolation method, the extrapolation is set to flat (constant)
+' First, we need to check for extrapolation:
+If OutputX < KnownX(1, 1) Then
+        fidInterpolate = KnownY(1, 1)
+    ElseIf OutputX >= KnownX(n, 1) Then
+        fidInterpolate = KnownY(n, 1)
+    Else ' if we are not extrapolating, we need to find the
+         'relevant points in the interpolation gird
+        For j = 1 To n
+             If KnownX(j, 1) <= OutputX Then
+                   i = i + 1
+             Else
+                   i = i
+             End If
+        Next
+
+    
+    Select Case LCase(Method)
+        Case "constant":
+        fidInterpolate = KnownY(i, 1)
+        
+        Case "linear":
+        fidInterpolate = ((OutputX - KnownX(i, 1)) * KnownY(i + 1, 1) _
+                        + (KnownX(i + 1, 1) - OutputX) * KnownY(i, 1)) / (KnownX(i + 1, 1) - KnownX(i, 1))
+        
+        Case "loglinear":
+        fidInterpolate = KnownY(i + 1, 1) ^ ((OutputX - KnownX(i, 1)) / (KnownX(i + 1, 1) - KnownX(i, 1))) _
+                        * KnownY(i, 1) ^ ((KnownX(i + 1, 1) - OutputX) / (KnownX(i + 1, 1) - KnownX(i, 1)))
+        
+        Case "hermite":
+        ' We need to distinguish between i=1, i=N and all other i's
+        ' when calculating b(i):
+        ' (Note that since we cannot use bi+1 as a variable name, we are using bk instead)
+        Dim bi As Double, bk As Double, hi As Double
+        Dim mi As Double, ci As Double, di As Double
+        Dim K As Integer
+        K = i + 1
+        If i = 1 Then
+            bi = ((KnownX(3, 1) + KnownX(2, 1) - 2 * KnownX(1, 1)) * (KnownY(2, 1) - KnownY(1, 1)) / (KnownX(2, 1) - KnownX(1, 1)) _
+                    - (KnownX(2, 1) - KnownX(1, 1)) * (KnownY(3, 1) - KnownY(2, 1)) / (KnownX(3, 1) - KnownX(2, 1))) * _
+                    (KnownX(3, 1) - KnownX(1, 1)) ^ -1
+            bk = ((KnownX(K + 1, 1) - KnownX(K, 1)) * (KnownY(K, 1) - KnownY(K - 1, 1)) / (KnownX(K, 1) - KnownX(K - 1, 1)) _
+                 + (KnownX(K, 1) - KnownX(K - 1, 1)) * (KnownY(K + 1, 1) - KnownY(K, 1)) / (KnownX(K + 1, 1) - KnownX(K, 1))) _
+                 * (KnownX(K + 1, 1) - KnownX(K - 1, 1)) ^ -1
+            
+        ElseIf i = n - 1 Then
+            bi = ((KnownX(i + 1, 1) - KnownX(i, 1)) * (KnownY(i, 1) - KnownY(i - 1, 1)) / (KnownX(i, 1) - KnownX(i - 1, 1)) _
+                 + (KnownX(i, 1) - KnownX(i - 1, 1)) * (KnownY(i + 1, 1) - KnownY(i, 1)) / (KnownX(i + 1, 1) - KnownX(i, 1))) _
+                 * (KnownX(i + 1, 1) - KnownX(i - 1, 1)) ^ -1
+            bk = -((KnownX(n, 1) - KnownX(n - 1, 1)) * (KnownY(n - 1, 1) - KnownY(n - 2, 1)) / (KnownX(n - 1, 1) - KnownX(n - 2, 1)) _
+                - (2 * KnownX(n, 1) - KnownX(n - 1, 1) - KnownX(n - 2, 1)) * (KnownY(n, 1) - KnownY(n - 1, 1)) / (KnownX(n, 1) - KnownX(n - 1, 1))) _
+                * (KnownX(n, 1) - KnownX(n - 2, 1)) ^ -1
+        Else
+            bi = ((KnownX(i + 1, 1) - KnownX(i, 1)) * (KnownY(i, 1) - KnownY(i - 1, 1)) / (KnownX(i, 1) - KnownX(i - 1, 1)) _
+                 + (KnownX(i, 1) - KnownX(i - 1, 1)) * (KnownY(i + 1, 1) - KnownY(i, 1)) / (KnownX(i + 1, 1) - KnownX(i, 1))) _
+                 * (KnownX(i + 1, 1) - KnownX(i - 1, 1)) ^ -1
+            bk = ((KnownX(K + 1, 1) - KnownX(K, 1)) * (KnownY(K, 1) - KnownY(K - 1, 1)) / (KnownX(K, 1) - KnownX(K - 1, 1)) _
+                 + (KnownX(K, 1) - KnownX(K - 1, 1)) * (KnownY(K + 1, 1) - KnownY(K, 1)) / (KnownX(K + 1, 1) - KnownX(K, 1))) _
+                 * (KnownX(K + 1, 1) - KnownX(K - 1, 1)) ^ -1
+        End If
+        hi = KnownX(i + 1, 1) - KnownX(i, 1)
+        mi = (KnownY(i + 1, 1) - KnownY(i, 1)) / hi
+        ci = (3 * mi - bk - 2 * bi) / hi
+        di = (bk + bi - 2 * mi) * hi ^ -2
+        fidInterpolate = KnownY(i, 1) + bi * (OutputX - KnownX(i, 1)) + ci * (OutputX - KnownX(i, 1)) ^ 2 + di * (OutputX - KnownX(i, 1)) ^ 3
+
+    End Select
+
+End If
+
+Exit Function
+ErrHandler:
+    fidInterpolate = "Error: Unidentical # of rows in KnownX and KnownY"
+
+End Function
+
+Public Function fidZeroRate(Maturity As Variant, CurveMaturities As Variant, _
+                            CurveRates As Variant, Method As String) As Double
+fidZeroRate = fidInterpolate(CurveMaturities, CurveRates, Maturity, Method)
+End Function
+Public Function fidDiscFactor(AnchorDate As Date, MaturityDate As Variant, _
+                            CurveMaturities As Variant, CurveRates As Variant, _
+                            Method As String) As Double
+fidDiscFactor = Exp(-fidZeroRate(MaturityDate, CurveMaturities, CurveRates, Method) _
+                * fidCvg(AnchorDate, MaturityDate, "Act/365"))
+End Function
+
+Public Function fidForwardRate1(AnchorDate As Date, StartDate As Date, MaturityDate As Date, _
+                            DayRule As String, DayCountBasis As String, CurveMaturities As Variant, _
+                            CurveRates As Variant, Method As String) As Double
+Dim Ps As Double, Pe As Double, Cvg As Double
+
+Ps = fidDiscFactor(AnchorDate, StartDate, CurveMaturities, CurveRates, Method)
+Pe = fidDiscFactor(AnchorDate, MaturityDate, CurveMaturities, CurveRates, Method)
+Cvg = fidCvg(StartDate, MaturityDate, DayCountBasis)
+
+fidForwardRate1 = (Ps / Pe - 1) / Cvg
+
+End Function
+
+Public Function fidForwardRate(AnchorDate As Date, Start As Variant, Maturity As Variant, _
+                            DayRule As String, DayCountBasis As String, CurveMaturities As Variant, _
+                            CurveRates As Variant, Method As String) As Double
+Dim Ps As Double, Pe As Double, Cvg As Double, StartDate As Date, MaturityDate As Date
+' We need another Date variable in case the Start or Maturity is specified as a tenor.
+
+If IsDate(Start) And IsDate(Maturity) Then
+    StartDate = Start
+    MaturityDate = Maturity
+ElseIf IsDate(Start) Then
+    StartDate = Start
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+ElseIf IsDate(Maturity) Then
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = Maturity
+Else
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+End If
+
+
+Ps = fidDiscFactor(AnchorDate, StartDate, CurveMaturities, CurveRates, Method)
+Pe = fidDiscFactor(AnchorDate, MaturityDate, CurveMaturities, CurveRates, Method)
+Cvg = fidCvg(StartDate, MaturityDate, DayCountBasis)
+
+fidForwardRate = (Ps / Pe - 1) / Cvg
+
+End Function
+Public Function fidAnnuityPv(AnchorDate As Date, StartDate As Variant, Maturity As Variant, _
+                                Tenor As String, DayCountBasis As String, DayRule As String, _
+                                DiscCurveMat As Variant, DiscCurveRates As Variant, Method As String) As Double
+' As the annuity PV is simply the sumproduct of a set of coverages and discount factors,
+' we can easily compute it using the fidGenerateSchedule function.
+
+Dim temp As Variant, PayDate As Date, Cvg As Double
+Dim i As Integer, n As Integer
+
+temp = fidGenerateSchedule(AnchorDate, StartDate, Maturity, Tenor, DayCountBasis, DayRule)
+
+n = UBound(temp)
+For i = 1 To n
+PayDate = temp(i, 4)
+Cvg = temp(i, 5)
+fidAnnuityPv = fidAnnuityPv + Cvg * fidDiscFactor(AnchorDate, PayDate, DiscCurveMat, _
+                                                DiscCurveRates, Method)
+                
+Next i
+
+End Function
+Public Function fidFloatingPv(AnchorDate As Date, Start As Variant, Maturity As Variant, Tenor As String, _
+                            DayCountBasis As String, DayRule As String, FwdCurveMat As Variant, _
+                            FwdCurveRates As Variant, Method As String, Optional DiscCurveMat As Variant, _
+                            Optional DiscCurveRates As Variant) As Double
+' As the floating PV had a simple formula, it is very easy to implement
+
+Dim temp As Variant, SDate As Date, EDate As Date, Cvg As Double
+Dim i As Integer, n As Integer
+
+' Check if the discounting curve inputs are being used,
+' if not then use the fwd curve as the disc curve.
+If IsMissing(DiscCurveMat) Or IsMissing(DiscCurveRates) Then
+    DiscCurveMat = FwdCurveMat
+    DiscCurveRates = FwdCurveRates
+End If
+
+temp = fidGenerateSchedule(AnchorDate, Start, Maturity, Tenor, DayCountBasis, DayRule)
+
+n = UBound(temp)
+For i = 1 To n
+SDate = temp(i, 3)
+EDate = temp(i, 4)
+Cvg = temp(i, 5)
+fidFloatingPv = fidFloatingPv + Cvg * fidForwardRate(AnchorDate, SDate, EDate, DayRule, DayCountBasis, FwdCurveMat, FwdCurveRates, Method) _
+                * fidDiscFactor(AnchorDate, EDate, DiscCurveMat, DiscCurveRates, Method)
+Next i
+
+End Function
+Public Function fidSwapRate(AnchorDate As Date, Start As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, Optional DiscCurveMat As Variant, Optional DiscCurveRates As Variant) As Double
+If IsMissing(DiscCurveMat) Or IsMissing(DiscCurveRates) Then
+DiscCurveMat = FwdCurveMat
+DiscCurveRates = FwdCurveRates
+End If
+
+Dim Fixed As Double, Floating As Double
+Fixed = fidAnnuityPv(AnchorDate, Start, Maturity, FixedTenor, FixedDayCountBasis, DayRule, _
+                    DiscCurveMat, DiscCurveRates, Method)
+Floating = fidFloatingPv(AnchorDate, Start, Maturity, FloatTenor, FloatDayCountBasis, DayRule, _
+                        FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+
+fidSwapRate = Floating / Fixed
+End Function
+Public Function fidSwapPv(AnchorDate As Date, Start As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, FixedRate As Double, TypeFlag As String, _
+                            FwdCurveMat As Variant, FwdCurveRates As Variant, Method As String, _
+                            Optional DiscCurveMat As Variant, Optional DiscCurveRates As Variant) As Double
+
+If IsMissing(DiscCurveMat) Or IsMissing(DiscCurveRates) Then
+DiscCurveMat = FwdCurveMat
+DiscCurveRates = FwdCurveRates
+End If
+
+Dim Fixed As Double, Floating As Double
+
+Fixed = FixedRate * fidAnnuityPv(AnchorDate, Start, Maturity, FixedTenor, FixedDayCountBasis, DayRule, _
+                    DiscCurveMat, DiscCurveRates, Method)
+Floating = fidFloatingPv(AnchorDate, Start, Maturity, FloatTenor, FloatDayCountBasis, DayRule, _
+                        FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+
+If LCase(TypeFlag) = "receiver" Then
+fidSwapPv = Fixed - Floating
+Else
+fidSwapPv = Floating - Fixed
+End If
+
+End Function
+Public Function fidCcsSpread(AnchorDate As Date, Start As Variant, Maturity As Variant, Tenor As String, _
+                            DayCountBasis As String, DayRule As String, FwdCurveMat As Variant, _
+                            FwdCurveRates As Variant, Method As String, DiscCurveMat As Variant, _
+                            DiscCurveRates As Variant) As Double
+
+Dim FloatPV As Double, NotExchg As Double, PvBp As Double
+Dim StartDate As Date, MaturityDate As Date
+' We need another Date variable in case the Start or Maturity is specified as a tenor.
+
+If IsDate(Start) And IsDate(Maturity) Then
+    StartDate = Start
+    MaturityDate = Maturity
+ElseIf IsDate(Start) Then
+    StartDate = Start
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+ElseIf IsDate(Maturity) Then
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = Maturity
+Else
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+End If
+
+FloatPV = fidFloatingPv(AnchorDate, StartDate, MaturityDate, Tenor, _
+                        DayCountBasis, DayRule, FwdCurveMat, FwdCurveRates, Method, _
+                        DiscCurveMat, DiscCurveRates)
+NotExchg = fidDiscFactor(AnchorDate, StartDate, DiscCurveMat, DiscCurveRates, Method) _
+            - fidDiscFactor(AnchorDate, MaturityDate, DiscCurveMat, DiscCurveRates, Method)
+
+PvBp = fidAnnuityPv(AnchorDate, Start, Maturity, Tenor, DayCountBasis, DayRule, DiscCurveMat, _
+                    DiscCurveRates, Method)
+
+fidCcsSpread = (NotExchg - FloatPV) / PvBp
+
+End Function
+Public Function fidCcsPv(AnchorDate As Date, Start As Variant, Maturity As Variant, Tenor As String, _
+                            DayCountBasis As String, DayRule As String, CcsSpread As Double, TypeFlag As String, _
+                            FwdCurveMat As Variant, FwdCurveRates As Variant, Method As String, _
+                            DiscCurveMat As Variant, DiscCurveRates As Variant) As Double
+
+Dim FloatPV As Double, NotExchg As Double, SpreadPv As Double
+Dim StartDate As Date, MaturityDate As Date
+' We need another Date variable in case the Start or Maturity is specified as a tenor.
+
+If IsDate(Start) And IsDate(Maturity) Then
+    StartDate = Start
+    MaturityDate = Maturity
+ElseIf IsDate(Start) Then
+    StartDate = Start
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+ElseIf IsDate(Maturity) Then
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = Maturity
+Else
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+End If
+
+FloatPV = fidFloatingPv(AnchorDate, StartDate, MaturityDate, Tenor, _
+                        DayCountBasis, DayRule, FwdCurveMat, FwdCurveRates, Method, _
+                        DiscCurveMat, DiscCurveRates)
+NotExchg = fidDiscFactor(AnchorDate, StartDate, DiscCurveMat, DiscCurveRates, Method) _
+            - fidDiscFactor(AnchorDate, MaturityDate, DiscCurveMat, DiscCurveRates, Method)
+
+SpreadPv = CcsSpread * fidAnnuityPv(AnchorDate, Start, Maturity, Tenor, DayCountBasis, DayRule, DiscCurveMat, _
+                    DiscCurveRates, Method)
+
+If LCase(TypeFlag) = "payer" Then
+fidCcsPv = NotExchg - FloatPV - SpreadPv
+Else
+fidCcsPv = -(NotExchg - FloatPV - SpreadPv)
+End If
+
+
+
+End Function
+
+Public Function fidSwaptionPv(AnchorDate As Date, Expiration As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, TypeFlag As String, K As Double, Settlement As String, _
+                            ImpVol As Double, FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, DiscCurveMat As Variant, DiscCurveRates As Variant) As Double
+                            
+Dim FwdSwp As Double, Annuity As Double, Cvg As Double, T As Double
+Dim d1 As Double, d2 As Double, temp As Variant, i As Integer
+
+' First, we need to calculate the forward swap rate, the annuity pv (the swap level)
+' as well as translate the expiration date into an Act365 time-to-expiration.
+
+FwdSwp = fidSwapRate(AnchorDate, Expiration, Maturity, FloatTenor, FloatDayCountBasis, FixedTenor, _
+                    FixedDayCountBasis, DayRule, FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, _
+                    DiscCurveRates)
+
+' Distinguish between physical and cash settlement
+Select Case LCase(Settlement)
+    Case "physical": Annuity = fidAnnuityPv(AnchorDate, Expiration, Maturity, FixedTenor, _
+                                            FixedDayCountBasis, DayRule, DiscCurveMat, _
+                                            DiscCurveRates, Method)
+    Case "cash": temp = fidGenerateSchedule(AnchorDate, Expiration, Maturity, FixedTenor, _
+                                            FixedDayCountBasis, DayRule)
+                
+                'First find the annuity value discounted back to the start date of the swap.
+                'This date is held in temp(1, 3). Next, discount this annuity back to the
+                'anchor date.
+                For i = 1 To UBound(temp)
+                    Cvg = temp(i, 5)
+                    Annuity = Annuity + Cvg * (1 + Cvg * FwdSwp) ^ -fidCvg(temp(1, 3), temp(i, 4), FixedDayCountBasis)
+                Next i
+                Annuity = Annuity * fidDiscFactor(AnchorDate, temp(1, 3), DiscCurveMat, DiscCurveRates, Method)
+End Select
+
+If IsDate(Expiration) Then
+    T = (Expiration - AnchorDate) / 365
+Else
+    T = (fidAddTenor(AnchorDate, Expiration, DayRule) - AnchorDate) / 365
+End If
+
+d1 = (Log(FwdSwp / K) + 0.5 * ImpVol ^ 2 * T) / (ImpVol * Sqr(T))
+d2 = d1 - ImpVol * Sqr(T)
+
+If LCase(TypeFlag) = "payer" Then
+    fidSwaptionPv = Annuity * (FwdSwp * WorksheetFunction.NormSDist(d1) - K * WorksheetFunction.NormSDist(d2))
+ElseIf LCase(TypeFlag) = "receiver" Then
+    fidSwaptionPv = Annuity * (K * WorksheetFunction.NormSDist(-d2) - FwdSwp * WorksheetFunction.NormSDist(-d1))
+Else
+    fidSwaptionPv = "Error: Invalid Swaption Type"
+End If
+
+End Function
+Public Function fidImpSwaptionVol(AnchorDate As Date, Expiration As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, TypeFlag As String, K As Double, Settlement As String, _
+                            Premium As Double, FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, DiscCurveMat As Variant, DiscCurveRates As Variant) As Double
+
+Dim ImpVol As Double
+Dim PremDiff As Double, BlackValue As Double, Derivative As Double
+ImpVol = 0.1  ' Set an intial guess - 10%
+
+' First calculate the Black formula value at the initial guess of imp vol.
+BlackValue = fidSwaptionPv(AnchorDate, Expiration, Maturity, FloatTenor, FloatDayCountBasis, _
+                         FixedTenor, FixedDayCountBasis, DayRule, TypeFlag, K, Settlement, _
+                         ImpVol, FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+
+'Then calculate the difference to the market premium
+PremDiff = BlackValue - Premium
+
+Dim MaxIter, i As Long
+MaxIter = 300
+i = 0
+
+Do While (Abs(PremDiff) > 1E-07)     ' And (i < MaxIter)
+'Re-calculate the Black formula value at new level of imp vol.
+BlackValue = fidSwaptionPv(AnchorDate, Expiration, Maturity, FloatTenor, FloatDayCountBasis, _
+                                FixedTenor, FixedDayCountBasis, DayRule, TypeFlag, K, _
+                                Settlement, ImpVol, FwdCurveMat, FwdCurveRates, _
+                                Method, DiscCurveMat, DiscCurveRates)
+
+'Calculate the derivative with respect to imp vol (vega)
+Derivative = 0.01 ^ -1 * (fidSwaptionPv(AnchorDate, Expiration, Maturity, FloatTenor, _
+                            FloatDayCountBasis, FixedTenor, FixedDayCountBasis, _
+                            DayRule, TypeFlag, K, Settlement, ImpVol + 0.01, _
+                            FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, _
+                            DiscCurveRates) - BlackValue)
+
+'Re-calculate difference btw. Black formula value and market premium
+PremDiff = (BlackValue - Premium)
+
+'Use Newton-Raphson to update imp vol estimate
+ImpVol = ImpVol - PremDiff / Derivative
+i = i + 1
+Loop
+
+
+fidImpSwaptionVol = ImpVol
+
+End Function
+
+Public Function fidImpSwaptionNormVol(AnchorDate As Date, Expiration As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, TypeFlag As String, K As Double, Settlement As String, _
+                            Premium As Double, FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, DiscCurveMat As Variant, DiscCurveRates As Variant) As Double
+
+Dim ImpVol As Double
+Dim PremDiff As Double, NormValue As Double, Derivative As Double
+ImpVol = 0.01  ' Set an intial guess - 1%
+
+' First calculate the Black formula value at the initial guess of imp vol.
+NormValue = fidSwaptionNormPv(AnchorDate, Expiration, Maturity, FloatTenor, FloatDayCountBasis, _
+                            FixedTenor, FixedDayCountBasis, DayRule, TypeFlag, K, Settlement, _
+                            ImpVol, FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+
+'Then calculate the difference to the market premium
+PremDiff = NormValue - Premium
+
+Dim MaxIter, i As Long
+MaxIter = 100
+i = 0
+
+Do While (Abs(PremDiff) > 1E-07) And (i < MaxIter)
+'Re-calculate the Black formula value at new level of imp vol.
+NormValue = fidSwaptionNormPv(AnchorDate, Expiration, Maturity, FloatTenor, FloatDayCountBasis, _
+                                FixedTenor, FixedDayCountBasis, DayRule, TypeFlag, K, _
+                                Settlement, ImpVol, FwdCurveMat, FwdCurveRates, _
+                                Method, DiscCurveMat, DiscCurveRates)
+
+'Calculate the derivative with respect to imp vol (vega)
+Derivative = 0.01 ^ -1 * (fidSwaptionNormPv(AnchorDate, Expiration, Maturity, FloatTenor, _
+                                FloatDayCountBasis, FixedTenor, FixedDayCountBasis, _
+                                DayRule, TypeFlag, K, Settlement, ImpVol + 0.01, _
+                                FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, _
+                                DiscCurveRates) - NormValue)
+
+'Re-calculate difference btw. Black formula value and market premium
+PremDiff = (NormValue - Premium)
+
+'Use Newton-Raphson to update imp vol estimate
+ImpVol = ImpVol - PremDiff / Derivative
+i = i + 1
+Loop
+
+fidImpSwaptionNormVol = ImpVol
+
+End Function
+
+Public Function fidSwaptionNormPv(AnchorDate As Date, Expiration As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, TypeFlag As String, K As Double, Settlement As String, _
+                            ImpVol As Double, FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, DiscCurveMat As Variant, DiscCurveRates As Variant) As Double
+                            
+Dim FwdSwp As Double, Annuity As Double, Cvg As Double, T As Double
+Dim d1 As Double, d2 As Double, temp As Variant, i As Integer
+
+' First, we need to calculate the forward swap rate, the annuity pv (the swap level)
+' as well as translate the expiration date into an Act365 time-to-expiration.
+
+FwdSwp = fidSwapRate(AnchorDate, Expiration, Maturity, FloatTenor, FloatDayCountBasis, FixedTenor, _
+                    FixedDayCountBasis, DayRule, FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, _
+                    DiscCurveRates)
+
+' Distinguish between physical and cash settlement
+Select Case LCase(Settlement)
+    Case "physical": Annuity = fidAnnuityPv(AnchorDate, Expiration, Maturity, FixedTenor, _
+                                            FixedDayCountBasis, DayRule, DiscCurveMat, _
+                                            DiscCurveRates, Method)
+    Case "cash": temp = fidGenerateSchedule(AnchorDate, Expiration, Maturity, FixedTenor, _
+                                            FixedDayCountBasis, DayRule)
+                
+                'First find the annuity value discounted back to the start date of the swap.
+                'This date is held in temp(1, 3). Next, discount this annuity back to the
+                'anchor date.
+                For i = 1 To UBound(temp)
+                    Cvg = temp(i, 5)
+                    Annuity = Annuity + Cvg * (1 + Cvg * FwdSwp) ^ -fidCvg(temp(1, 3), temp(i, 4), FixedDayCountBasis)
+                Next i
+                Annuity = Annuity * fidDiscFactor(AnchorDate, temp(1, 3), DiscCurveMat, DiscCurveRates, Method)
+End Select
+
+If IsDate(Expiration) Then
+    T = (Expiration - AnchorDate) / 365
+Else
+    T = (fidAddTenor(AnchorDate, Expiration, DayRule) - AnchorDate) / 365
+End If
+
+d1 = (FwdSwp - K) / (ImpVol * Sqr(T))
+
+If LCase(TypeFlag) = "payer" Then
+    fidSwaptionNormPv = Annuity * ((FwdSwp - K) * WorksheetFunction.NormSDist(d1) + ImpVol * Sqr(T / (2 * 3.141592654)) * Exp(-0.5 * d1 * d1))
+ElseIf LCase(TypeFlag) = "receiver" Then
+    fidSwaptionNormPv = Annuity * ((K - FwdSwp) * WorksheetFunction.NormSDist(-d1) + ImpVol * Sqr(T / (2 * 3.141592654)) * Exp(-0.5 * d1 * d1))
+Else
+    fidSwaptionNormPv = "Error: Invalid Swaption Type"
+End If
+
+End Function
+
+
+Public Function fidSabr(F As Double, K As Double, T As Double, Sigma As Double, _
+                        Alpha As Double, Epsilon As Double, Rho As Double) As Double
+
+Dim z As Double, X As Double, help1 As Double, help2 As Double
+
+'We need to handle the K=F case seperately
+' --> Check if they are very close to each other
+If Abs(F - K) < 1E-16 Then
+    
+    help1 = (((1 - Alpha) ^ 2) * Sigma ^ 2 / (24 * (F ^ (2 - 2 * Alpha))) + (1 / 4) * (Rho * Alpha * Epsilon * Sigma) / (F ^ (1 - Alpha)) + (2 - 3 * (Rho * Rho)) * (Epsilon * Epsilon) / 24) * T
+    fidSabr = (Sigma / (F ^ (1 - Alpha))) * (1 + help1)
+
+Else
+    
+    z = (Epsilon / Sigma) * ((F * K) ^ ((1 - Alpha) / 2)) * Log(F / K)
+    X = Log((Sqr(1 - 2 * Rho * z + z ^ 2) + z - Rho) / (1 - Rho))
+    
+    'Make the calculations a bit more easy with a helping hand...
+    help1 = ((F * K) ^ ((1 - Alpha) / 2)) * (1 + ((1 - Alpha) ^ 2) * (Log(F / K) * Log(F / K)) / 24 + ((1 - Alpha) ^ 4) * (Log(F / K) * Log(F / K) * Log(F / K) * Log(F / K)) / 1920)
+    
+    help2 = (((1 - Alpha) ^ 2 * Sigma ^ 2) / (24 * (F * K) ^ (1 - Alpha)) + (1 / 4) * (Rho * Alpha * Epsilon * Sigma) / ((F * K) ^ ((1 - Alpha) / 2)) + (1 / 24) * (2 - 3 * (Rho * Rho)) * Epsilon * Epsilon) * T
+    
+    fidSabr = (Sigma / help1) * (z / X) * (1 + help2)
+    
+End If
+
+End Function
+
+Public Function fidBlackToSabr(BlackVol As Double, F As Double, T As Double, _
+                                Alpha As Double, Epsilon As Double, Rho As Double) As Double
+
+' The function uses Newton-Raphsons method to invert the SABR ATM formula
+' from a Black'76 implied vol to the SABR Sigma_0 vol.
+
+Dim Sigma As Double, Derivative As Double, temp As Double
+
+Sigma = 1 'Set an initial guess Sigma_0=1%
+
+Do While Abs(fidSabr(F, F, T, Sigma, Alpha, Epsilon, Rho) - BlackVol) > 0.001
+
+Derivative = 0.0001 ^ -1 * (fidSabr(F, F, T, Sigma + 0.0001, Alpha, Epsilon, Rho) - BlackVol _
+                - (fidSabr(F, F, T, Sigma, Alpha, Epsilon, Rho) - BlackVol))
+Sigma = Sigma - (fidSabr(F, F, T, Sigma, Alpha, Epsilon, Rho) - BlackVol) / Derivative
+Loop
+fidBlackToSabr = Sigma
+
+End Function
+Public Function fidCmsSwapletPv(AnchorDate As Date, Start As Variant, Maturity As Variant, _
+                            CmsDayCountBasis As String, CmsTenor As String, DayRule As String, _
+                            Sigma As Double, Alpha As Double, Epsilon As Double, Rho As Double, _
+                            FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, Optional DiscCurveMat As Variant, Optional DiscCurveRates As Variant) As Double
+
+' To keep the input arguments at a minimum, some inputs are hardcoded:
+' First, conventions on the underlying swap
+Dim FloatTenor As String, FloatDayCountBasis As String, _
+    FixedTenor As String, FixedDayCountBasis As String, _
+    SwapDayRule As String
+    
+FloatTenor = "6M"
+FloatDayCountBasis = "Act/360"
+FixedTenor = "1Y"
+FixedDayCountBasis = "30/360"
+SwapDayRule = "MF"
+
+' Second, some technical settings
+Dim IntLowBound As Double, IntUpBound As Double, m As Double, Steps As Integer
+IntLowBound = 0.001     ' 10 bps - The lower bound for numerical integration, updated later on
+IntUpBound = 0.2        ' 20% - The upper bound for numerical integration, updated later on
+m = 5                   ' The number of standard deviations to integrate over
+Steps = 50              ' The number of integration steps
+
+Dim StartDate As Date, MaturityDate As Date
+' We need another Date variable in case the Start or Maturity is specified as a tenor.
+
+If IsDate(Start) And IsDate(Maturity) Then
+    StartDate = Start
+    MaturityDate = Maturity
+ElseIf IsDate(Start) Then
+    StartDate = Start
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+ElseIf IsDate(Maturity) Then
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = Maturity
+Else
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+End If
+
+Dim R As Double, G As Double, GPrime As Double, n As Double
+
+R = fidSwapRate(AnchorDate, StartDate, CmsTenor, FloatTenor, FloatDayCountBasis, FixedTenor, _
+                FixedDayCountBasis, SwapDayRule, FwdCurveMat, FwdCurveRates, Method, _
+                DiscCurveMat, DiscCurveRates)
+n = Left(CmsTenor, Len(CmsTenor) - 1)
+
+G = (R * (1 + R) ^ -0.25) * (1 - (1 + R) ^ -n) ^ -1
+GPrime = (((R + 0.0001) * (1 + (R + 0.0001)) ^ -0.25) * (1 - (1 + (R + 0.0001)) ^ -n) ^ -1 - G) / 0.0001
+
+Dim T As Double, IntStep As Double, AtmVol As Double
+
+T = fidCvg(AnchorDate, StartDate, "Act/365")
+AtmVol = fidSabr(R, R, T, Sigma, Alpha, Epsilon, Rho)
+IntLowBound = WorksheetFunction.Max(IntLowBound, R * Exp(-m * AtmVol * Sqr(T)))
+IntUpBound = WorksheetFunction.Min(IntUpBound, R * Exp(m * AtmVol * Sqr(T)))
+IntStep = (IntUpBound - IntLowBound) / Steps
+
+Dim CC As Double, SwoptPrem As Double, X As Double, i As Integer, Vol As Double
+CC = 0
+X = IntLowBound
+
+For i = 1 To Steps
+
+' First, look up the relevant Black'76 vol from the SABR formula
+Vol = fidSabr(R, X, T, Sigma, Alpha, Epsilon, Rho)
+
+If X < R Then
+    'For strikes below the Fwd Swap rate, integrate over RECEIVER premia
+    SwoptPrem = fidSwaptionPv(AnchorDate, StartDate, CmsTenor, FloatTenor, FloatDayCountBasis, _
+                            FixedTenor, FixedDayCountBasis, SwapDayRule, "Receiver", _
+                            X, "Cash", Vol, FwdCurveMat, FwdCurveRates, Method, _
+                            DiscCurveMat, DiscCurveRates)
+Else
+    'For strikes below the Fwd Swap rate, integrate over PAYER premia
+    SwoptPrem = fidSwaptionPv(AnchorDate, StartDate, CmsTenor, FloatTenor, FloatDayCountBasis, _
+                            FixedTenor, FixedDayCountBasis, SwapDayRule, "Payer", _
+                            X, "Cash", Vol, FwdCurveMat, FwdCurveRates, Method, _
+                            DiscCurveMat, DiscCurveRates)
+End If
+CC = CC + 2 * (GPrime / G) * SwoptPrem * IntStep
+X = X + IntStep
+Next i
+
+Dim Disc As Double, Annuity As Double, Cvg As Double, temp As Variant, CvgFixedLeg As Double
+
+Disc = fidDiscFactor(AnchorDate, MaturityDate, DiscCurveMat, DiscCurveRates, Method)
+Cvg = fidCvg(StartDate, MaturityDate, CmsDayCountBasis)
+
+               
+'Since we are replicating using cash settling swaptions, we need to calculate
+'the annuity value using the cash annuity formula.
+'First find the annuity value discounted back to the start date of the swap.
+'This date is held in temp(1, 3). Next, discount this annuity back to the
+'anchor date.
+temp = fidGenerateSchedule(AnchorDate, StartDate, CmsTenor, FixedTenor, _
+                                            FixedDayCountBasis, SwapDayRule)
+For i = 1 To UBound(temp)
+    CvgFixedLeg = temp(i, 5)
+    Annuity = Annuity + CvgFixedLeg * (1 + CvgFixedLeg * R) ^ -fidCvg(temp(1, 3), temp(i, 4), FixedDayCountBasis)
+Next i
+Annuity = Annuity * fidDiscFactor(AnchorDate, temp(1, 3), DiscCurveMat, DiscCurveRates, Method)
+
+fidCmsSwapletPv = Cvg * (Disc * R + (Disc / Annuity) * CC)
+End Function
+
+
+Public Function fidSurvivalProb(AnchorDate As Date, MaturityDate As Variant, _
+                                IntensityMaturities As Variant, Intensities As Variant) As Double
+
+IntensityMaturities = CVar(IntensityMaturities)
+Intensities = CVar(Intensities)
+
+Dim i, n As Integer, T_S, T_E, LambdaInt As Double
+i = 1
+n = UBound(IntensityMaturities)
+
+' Special case fo maturity date before first knot point
+If MaturityDate <= IntensityMaturities(i, 1) Then
+    T_E = fidCvg(AnchorDate, MaturityDate, "Act/365")
+    LambdaInt = Intensities(1, 1) * T_E
+    GoTo Output
+End If
+
+'Handle the first period
+LambdaInt = Intensities(1, 1) * fidCvg(AnchorDate, IntensityMaturities(1, 1), "Act/365")
+
+'Handle interim periods
+Do While MaturityDate > IntensityMaturities(i, 1) And i < n
+
+    T_S = fidCvg(AnchorDate, IntensityMaturities(i, 1), "Act/365")
+    T_E = fidCvg(AnchorDate, WorksheetFunction.Min(MaturityDate, IntensityMaturities(i + 1, 1)), "Act/365")
+    LambdaInt = LambdaInt + Intensities(i + 1, 1) * (T_E - T_S)
+    i = i + 1
+Loop
+
+'Handle maturity date after last knot point
+If MaturityDate > IntensityMaturities(n, 1) Then
+    T_S = fidCvg(AnchorDate, IntensityMaturities(n, 1), "Act/365")
+    T_E = fidCvg(AnchorDate, MaturityDate, "Act/365")
+    LambdaInt = LambdaInt + Intensities(n, 1) * (T_E - T_S)
+End If
+
+Output:
+fidSurvivalProb = Exp(-LambdaInt)
+End Function
+
+Public Function fidRiskyAnnuityPv(AnchorDate As Date, StartDate As Variant, Maturity As Variant, Tenor As String, _
+                                DayCountBasis As String, DayRule As String, DiscCurveMat As Variant, _
+                                DiscCurveRates As Variant, Method As String, IntensityMaturities As Variant, _
+                                Intensities As Variant) As Double
+' As the risky annuity PV is simply the sumproduct of a set of coverages, discount factors and survival probabilities,
+' we can easily compute it using the fidGenerateSchedule function.
+
+Dim temp As Variant, PayDate As Date, Cvg As Double
+Dim i As Integer, n As Integer
+
+temp = fidGenerateSchedule(AnchorDate, StartDate, Maturity, Tenor, DayCountBasis, DayRule)
+
+n = UBound(temp)
+For i = 1 To n
+PayDate = temp(i, 4)
+Cvg = temp(i, 5)
+fidRiskyAnnuityPv = fidRiskyAnnuityPv + Cvg * fidDiscFactor(AnchorDate, PayDate, DiscCurveMat, DiscCurveRates, Method) _
+                                    * fidSurvivalProb(AnchorDate, PayDate, IntensityMaturities, Intensities)
+Next i
+
+End Function
+Public Function fidProtectionLegPv(AnchorDate As Date, Start As Variant, Maturity As Variant, Tenor As String, DayRule As String, Recovery As Double, _
+                                    DiscCurveMat As Variant, DiscCurveRates As Variant, Method As String, _
+                                    IntensityMaturities As Variant, Intensities As Variant) As Double
+' As the protection PV is simply the sumproduct of a set of incremental default probabilities
+' discount factors and the loss given default (=1-RR), we can easily compute it using the
+' fidGenerateSchedule and fidSurvivalProb functions.
+
+Dim temp As Variant, StartDate As Date, EndDate As Date
+Dim i As Integer, n As Integer, DefaultProb As Double
+
+temp = fidGenerateSchedule(AnchorDate, Start, Maturity, Tenor, "Act365", DayRule)
+
+n = UBound(temp)
+For i = 1 To n
+StartDate = temp(i, 3)
+EndDate = temp(i, 4)
+DefaultProb = fidSurvivalProb(AnchorDate, StartDate, IntensityMaturities, Intensities) - _
+            fidSurvivalProb(AnchorDate, EndDate, IntensityMaturities, Intensities)
+
+fidProtectionLegPv = fidProtectionLegPv + DefaultProb * (1 - Recovery) * _
+                    fidDiscFactor(AnchorDate, EndDate, DiscCurveMat, DiscCurveRates, Method)
+Next i
+
+End Function
+
+Public Function fidParCdsSpread(AnchorDate As Date, Start As Variant, Maturity As Variant, Tenor As String, _
+                                DayCountBasis As String, DayRule As String, Recovery As Double, DiscCurveMat As Variant, _
+                                DiscCurveRates As Variant, Method As String, IntensityMaturities As Variant, _
+                                Intensities As Variant) As Double
+                                
+Dim ProtectionLegPV As Double, FeeLegPv As Double
+
+ProtectionLegPV = fidProtectionLegPv(AnchorDate, Start, Maturity, Tenor, DayRule, Recovery, _
+                                    DiscCurveMat, DiscCurveRates, Method, _
+                                    IntensityMaturities, Intensities)
+
+FeeLegPv = fidRiskyAnnuityPv(AnchorDate, Start, Maturity, Tenor, DayCountBasis, DayRule, DiscCurveMat, _
+                                DiscCurveRates, Method, IntensityMaturities, Intensities)
+
+fidParCdsSpread = ProtectionLegPV / FeeLegPv
+
+End Function
+Public Function fidCdsPv(AnchorDate As Date, Start As Variant, Maturity As Variant, Tenor As String, _
+                                DayCountBasis As String, DayRule As String, Spread As Double, _
+                                Recovery As Double, TypeFlag As String, DiscCurveMat As Variant, _
+                                DiscCurveRates As Variant, Method As String, IntensityMaturities As Variant, _
+                                Intensities As Variant) As Double
+                                
+Dim ProtectionLegPV As Double, FeeLegPv As Double
+
+ProtectionLegPV = fidProtectionLegPv(AnchorDate, Start, Maturity, Tenor, DayRule, Recovery, _
+                                    DiscCurveMat, DiscCurveRates, Method, _
+                                    IntensityMaturities, Intensities)
+
+FeeLegPv = fidRiskyAnnuityPv(AnchorDate, Start, Maturity, Tenor, DayCountBasis, DayRule, DiscCurveMat, _
+                                DiscCurveRates, Method, IntensityMaturities, Intensities)
+
+If LCase(TypeFlag) = "buyer" Then
+    fidCdsPv = (ProtectionLegPV - Spread * FeeLegPv)
+ElseIf LCase(TypeFlag) = "seller" Then
+    fidCdsPv = (Spread * FeeLegPv - ProtectionLegPV)
+Else
+    fidCdsPv = "TypeFlag should be 'buyer' or 'seller'"
+End If
+
+End Function
+Public Function fidDigitalCapletPv(AnchorDate As Date, Expiration As Variant, _
+                            Maturity As Variant, Tenor As String, _
+                            DayCountBasis As String, DayRule As String, _
+                            K As Double, TypeFlag As String, VolLowStrike As Double, _
+                            VolHighStrike As Double, StrikeOffset, _
+                            FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, Optional DiscCurveMat As Variant, _
+                            Optional DiscCurveRates As Variant) As Variant
+
+Dim premiumlow, premiumhigh As Double
+
+If IsMissing(DiscCurveMat) Or IsMissing(DiscCurveRates) Then
+DiscCurveMat = FwdCurveMat
+DiscCurveRates = FwdCurveRates
+End If
+
+'Using the relevant Black'76 volatilities, we simply price the digital
+'as the call spread between two swaption prices.
+'Note that the cap is physically settling.
+premiumlow = fidSwaptionPv(AnchorDate, Expiration, Maturity, Tenor, DayCountBasis, Tenor, DayCountBasis, DayRule, _
+                        TypeFlag, K - StrikeOffset, "Physical", VolLowStrike, FwdCurveMat, FwdCurveRates, _
+                        Method, DiscCurveMat, DiscCurveRates)
+premiumhigh = fidSwaptionPv(AnchorDate, Expiration, Maturity, Tenor, DayCountBasis, Tenor, DayCountBasis, DayRule, _
+                        TypeFlag, K + StrikeOffset, "Physical", VolHighStrike, FwdCurveMat, FwdCurveRates, _
+                        Method, DiscCurveMat, DiscCurveRates)
+If LCase(TypeFlag) = "payer" Then
+    fidDigitalCapletPv = (premiumlow - premiumhigh) / (2 * StrikeOffset)
+ElseIf LCase(TypeFlag) = "receiver" Then
+    fidDigitalCapletPv = (premiumhigh - premiumlow) / (2 * StrikeOffset)
+Else
+    fidDigitalCapletPv = "Error: TypeFlag should be Payer or Receiver"
+End If
+End Function
+
+Public Function fidDigitalCapletNormPv(AnchorDate As Date, Expiration As Variant, _
+                            Maturity As Variant, Tenor As String, _
+                            DayCountBasis As String, DayRule As String, _
+                            K As Double, TypeFlag As String, VolLowStrike As Double, _
+                            VolHighStrike As Double, StrikeOffset, _
+                            FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, Optional DiscCurveMat As Variant, _
+                            Optional DiscCurveRates As Variant) As Variant
+
+Dim premiumlow, premiumhigh As Double
+
+If IsMissing(DiscCurveMat) Or IsMissing(DiscCurveRates) Then
+DiscCurveMat = FwdCurveMat
+DiscCurveRates = FwdCurveRates
+End If
+
+'Using the relevant Black'76 volatilities, we simply price the digital
+'as the call spread between two swaption prices.
+'Note that the cap is physically settling.
+premiumlow = fidSwaptionNormPv(AnchorDate, Expiration, Maturity, Tenor, DayCountBasis, Tenor, DayCountBasis, DayRule, _
+                        TypeFlag, K - StrikeOffset, "Physical", VolLowStrike, FwdCurveMat, FwdCurveRates, _
+                        Method, DiscCurveMat, DiscCurveRates)
+premiumhigh = fidSwaptionNormPv(AnchorDate, Expiration, Maturity, Tenor, DayCountBasis, Tenor, DayCountBasis, DayRule, _
+                        TypeFlag, K + StrikeOffset, "Physical", VolHighStrike, FwdCurveMat, FwdCurveRates, _
+                        Method, DiscCurveMat, DiscCurveRates)
+If LCase(TypeFlag) = "payer" Then
+    fidDigitalCapletNormPv = (premiumlow - premiumhigh) / (2 * StrikeOffset)
+ElseIf LCase(TypeFlag) = "receiver" Then
+    fidDigitalCapletNormPv = (premiumhigh - premiumlow) / (2 * StrikeOffset)
+Else
+    fidDigitalCapletNormPv = "Error: TypeFlag should be Payer or Receiver"
+End If
+End Function
+
+Public Function fidAswSpread(AnchorDate As Date, Start As Variant, Maturity As Variant, _
+                            FloatTenor As String, FloatDayCountBasis As String, _
+                            FixedTenor As String, FixedDayCountBasis As String, _
+                            DayRule As String, BondDirtyPrice As Double, Coupon As Double, _
+                            PrevCouponDate As Date, FwdCurveMat As Variant, _
+                            FwdCurveRates As Variant, Method As String, _
+                            DiscCurveMat As Variant, _
+                            DiscCurveRates As Variant) As Double
+
+Dim FixedLeg As Double, FloatLeg As Double, ParDiff As Double
+Dim NetSpreadable As Double, PvBp As Double
+
+FixedLeg = Coupon * fidAnnuityPv(AnchorDate, PrevCouponDate, Maturity, FixedTenor, FixedDayCountBasis, _
+                            DayRule, DiscCurveMat, DiscCurveRates, Method)
+
+FloatLeg = fidFloatingPv(AnchorDate, Start, Maturity, FloatTenor, FloatDayCountBasis, _
+                        DayRule, FwdCurveMat, FwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+                        
+ParDiff = (100 - BondDirtyPrice) / 100
+
+NetSpreadable = FixedLeg + ParDiff - FloatLeg
+
+PvBp = fidAnnuityPv(AnchorDate, Start, Maturity, FloatTenor, FloatDayCountBasis, _
+                            DayRule, DiscCurveMat, DiscCurveRates, Method)
+
+fidAswSpread = NetSpreadable / PvBp
+
+End Function
+Public Function CmsSwapletPvNew(AnchorDate As Date, Start As Variant, Maturity As Variant, _
+                            CmsDayCountBasis As String, CmsTenor As String, DayRule As String, _
+                            Sigma As Double, Alpha As Double, Epsilon As Double, Rho As Double, _
+                            IntUpBound As Double, FwdCurveMat As Variant, FwdCurveRates As Variant, _
+                            Method As String, Optional DiscCurveMat As Variant, Optional DiscCurveRates As Variant) As Double
+
+' To keep the input arguments at a minimum, some inputs are hardcoded:
+' First, conventions on the underlying swap
+Dim FloatTenor As String, FloatDayCountBasis As String, _
+    FixedTenor As String, FixedDayCountBasis As String, _
+    SwapDayRule As String
+    
+FloatTenor = "6M"
+FloatDayCountBasis = "Act/360"
+FixedTenor = "1Y"
+FixedDayCountBasis = "30/360"
+SwapDayRule = "MF"
+
+' Second, some technical settings
+Dim IntLowBound As Double, m As Double, Steps As Integer
+IntLowBound = 0.001     ' 10 bps - The lower bound for numerical integration, updated later on
+m = 5                   ' The number of standard deviations to integrate over
+Steps = 50              ' The number of integration steps
+
+Dim StartDate As Date, MaturityDate As Date
+' We need another Date variable in case the Start or Maturity is specified as a tenor.
+
+If IsDate(Start) And IsDate(Maturity) Then
+    StartDate = Start
+    MaturityDate = Maturity
+ElseIf IsDate(Start) Then
+    StartDate = Start
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+ElseIf IsDate(Maturity) Then
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = Maturity
+Else
+    StartDate = fidAddTenor(AnchorDate, Start, DayRule)
+    MaturityDate = fidAddTenor(StartDate, Maturity, DayRule)
+End If
+
+Dim R As Double, G As Double, GPrime As Double, n As Double
+
+R = fidSwapRate(AnchorDate, StartDate, CmsTenor, FloatTenor, FloatDayCountBasis, FixedTenor, _
+                FixedDayCountBasis, SwapDayRule, FwdCurveMat, FwdCurveRates, Method, _
+                DiscCurveMat, DiscCurveRates)
+n = Left(CmsTenor, Len(CmsTenor) - 1)
+
+G = (R * (1 + R) ^ -0.25) * (1 - (1 + R) ^ -n) ^ -1
+GPrime = (((R + 0.0001) * (1 + (R + 0.0001)) ^ -0.25) * (1 - (1 + (R + 0.0001)) ^ -n) ^ -1 - G) / 0.0001
+
+Dim T As Double, IntStep As Double, AtmVol As Double
+
+T = fidCvg(AnchorDate, StartDate, "Act/365")
+AtmVol = fidSabr(R, R, T, Sigma, Alpha, Epsilon, Rho)
+IntLowBound = WorksheetFunction.Max(IntLowBound, R * Exp(-m * AtmVol * Sqr(T)))
+IntUpBound = WorksheetFunction.Min(IntUpBound, R * Exp(m * AtmVol * Sqr(T)))
+IntStep = (IntUpBound - IntLowBound) / Steps
+
+Dim CC As Double, SwoptPrem As Double, X As Double, i As Integer, Vol As Double
+CC = 0
+X = IntLowBound
+
+For i = 1 To Steps
+
+' First, look up the relevant Black'76 vol from the SABR formula
+Vol = fidSabr(R, X, T, Sigma, Alpha, Epsilon, Rho)
+
+If X < R Then
+    'For strikes below the Fwd Swap rate, integrate over RECEIVER premia
+    SwoptPrem = fidSwaptionPv(AnchorDate, StartDate, CmsTenor, FloatTenor, FloatDayCountBasis, _
+                            FixedTenor, FixedDayCountBasis, SwapDayRule, "Receiver", _
+                            X, "Cash", Vol, FwdCurveMat, FwdCurveRates, Method, _
+                            DiscCurveMat, DiscCurveRates)
+Else
+    'For strikes below the Fwd Swap rate, integrate over PAYER premia
+    SwoptPrem = fidSwaptionPv(AnchorDate, StartDate, CmsTenor, FloatTenor, FloatDayCountBasis, _
+                            FixedTenor, FixedDayCountBasis, SwapDayRule, "Payer", _
+                            X, "Cash", Vol, FwdCurveMat, FwdCurveRates, Method, _
+                            DiscCurveMat, DiscCurveRates)
+End If
+CC = CC + 2 * (GPrime / G) * SwoptPrem * IntStep
+X = X + IntStep
+Next i
+
+Dim Disc As Double, Annuity As Double, Cvg As Double, temp As Variant, CvgFixedLeg As Double
+
+Disc = fidDiscFactor(AnchorDate, MaturityDate, DiscCurveMat, DiscCurveRates, Method)
+Cvg = fidCvg(StartDate, MaturityDate, CmsDayCountBasis)
+
+               
+'Since we are replicating using cash settling swaptions, we need to calculate
+'the annuity value using the cash annuity formula.
+'First find the annuity value discounted back to the start date of the swap.
+'This date is held in temp(1, 3). Next, discount this annuity back to the
+'anchor date.
+temp = fidGenerateSchedule(AnchorDate, StartDate, CmsTenor, FixedTenor, _
+                                            FixedDayCountBasis, SwapDayRule)
+For i = 1 To UBound(temp)
+    CvgFixedLeg = temp(i, 5)
+    Annuity = Annuity + CvgFixedLeg * (1 + CvgFixedLeg * R) ^ -fidCvg(temp(1, 3), temp(i, 4), FixedDayCountBasis)
+Next i
+Annuity = Annuity * fidDiscFactor(AnchorDate, temp(1, 3), DiscCurveMat, DiscCurveRates, Method)
+
+CmsSwapletPvNew = Cvg * (Disc * R + (Disc / Annuity) * CC)
+End Function
+
+Public Function fidMMBasisSpread(AnchorDate As Date, Start As Variant, Maturity As Variant, ShortTenor As String, _
+                            LongTenor As String, DayCountBasis As String, DayRule As String, ShortFwdCurveMat As Variant, _
+                            ShortFwdCurveRates As Variant, LongFwdCurveMat As Variant, LongFwdCurveRates As Variant, Method As String, DiscCurveMat As Variant, _
+                            DiscCurveRates As Variant) As Double
+
+'This function calculates the par basis spread applied to the short dated tenor leg
+'in a Money Market basis swap. It is a simple application of two valuations of fidFloatingPV()
+'and fidAnnuityPv(). Compared to the fidFloatingPv() function it does not make sense to keep
+'the optionality of the Disc curve arguments, as you would then discount the the simultaneous
+'cash flows at two different rates (which would create arbitrage).
+
+Dim ShortTenorPv, LongTenorPV, PvBp As Double
+
+ShortTenorPv = fidFloatingPv(AnchorDate, Start, Maturity, ShortTenor, DayCountBasis, DayRule, ShortFwdCurveMat, _
+                            ShortFwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+LongTenorPV = fidFloatingPv(AnchorDate, Start, Maturity, LongTenor, DayCountBasis, DayRule, LongFwdCurveMat, _
+                            LongFwdCurveRates, Method, DiscCurveMat, DiscCurveRates)
+PvBp = fidAnnuityPv(AnchorDate, Start, Maturity, ShortTenor, DayCountBasis, DayRule, DiscCurveMat, DiscCurveRates, Method)
+
+fidMMBasisSpread = (LongTenorPV - ShortTenorPv) / PvBp
+End Function
+
+
+
