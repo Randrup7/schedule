@@ -151,6 +151,7 @@ double annuity(const finDate& anchor, const interval& start, const interval& mat
     return annuity(anchor, startDate, maturityDate, freq, discCurve, interpolate, daycount, dayAdjustment, stub, Calendar);
 }
 
+// Returns the value at anchor of receiving the floating rate from curve discounted with discCurve
 double floatingPV(const finDate& anchor, const finDate& start, const finDate& maturity,
                 const interval& freq, const std::vector<std::pair<finDate, interestRate>>& curve, 
                 const std::vector<std::pair<finDate, interestRate>>& discCurve, 
@@ -180,6 +181,7 @@ double floatingPV(const finDate& anchor, const finDate& start, const finDate& ma
     return PV;
 }
 
+// Returns the value at anchor of receiving 1 unit annualy from start to maturity.
 double annuity(const finDate& anchor, const interval& start, const interval& maturity,
                 const interval& freq, const std::vector<std::pair<finDate, interestRate>>& discCurve, 
                     std::shared_ptr<I_interpolate<finDate, interestRate>> interpolate,
@@ -196,6 +198,8 @@ double annuity(const finDate& anchor, const interval& start, const interval& mat
  
     return annuity(anchor, startDate, maturityDate, freq, discCurve, interpolate, daycount, dayAdjustment, stub, Calendar);
 }
+
+
 
 std::ostream& operator<<(std::ostream& out, const interestRate& rhs)
 {

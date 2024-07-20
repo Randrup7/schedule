@@ -75,4 +75,10 @@ double floatingPV(const finDate& anchor, const finDate& start, const finDate& ma
                     std::shared_ptr<I_dayCount> daycount, std::shared_ptr<I_dayAdjustment> dayAdjustment,
                     std::shared_ptr<I_stub> stub, std::shared_ptr<I_calendar> Calendar);
 
+double swapRate(const finDate& anchor, const interval& start, const interval& maturity,
+                const interval& fixedFreq, const std::vector<std::pair<finDate, interestRate>>& discCurve, 
+                    std::shared_ptr<I_interpolate<finDate, interestRate>> interpolate,
+                    std::shared_ptr<I_dayCount> fixedDaycount, std::shared_ptr<I_dayAdjustment> dayAdjustment,
+                    std::shared_ptr<I_stub> stub, std::shared_ptr<I_calendar> Calendar);
+
 #endif
